@@ -1,12 +1,10 @@
 import numpy as np
 
-def F_matrix(dt):
+def F_1D(dt):
     return np.array([
-        [1,0,dt,0],
-        [0,1,0,dt],
-        [0,0,1,0],
-        [0,0,0,1]
+        [1, dt],
+        [0, 1]
     ])
 
-def propagate(x, dt):
-    return F_matrix(dt) @ x
+def H_1D():
+    return np.array([[1, 0]])
