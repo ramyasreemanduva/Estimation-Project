@@ -1,3 +1,4 @@
+import numpy as np
 def simulate_1D(steps, dt):
     x, v = 0, 10
     data = []
