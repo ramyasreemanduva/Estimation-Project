@@ -1,7 +1,8 @@
 import numpy as np
 
 def F_1D(dt):
-    return np.array([
+    return np.array
+    ([
         [1, dt],
         [0, 1]
     ])
