@@ -1,61 +1,51 @@
 import numpy as np
 
-from models.dynamics import F_1D, H_1D
+from models.dynamics import F_2D
 from filters.kalman_filter import kf_step
-from plots.plot_results import plot_position, plot_velocity
+from simulation.simulator import simulate_circular, measure_2D
+from plots.plot_results import plot_trajectory
 
 # CONFIG
 
 dt = 0.1
-steps = 100
+steps = 200
+R = 50
+omega = 0.2
 
-# TRUE SYSTEM
+# SIMULATION
 
-x_true = []
-x, v = 0, 10
-
-for _ in range(steps):
-    x += v * dt
-    x_true.append([x, v])
-
-x_true = np.array(x_true)
-
-# MEASUREMENTS (NOISE)
-
-z = x_true[:, 0] + np.random.randn(steps) * 1.5
+true_states = simulate_circular(steps, dt, R, omega)
+measurements = measure_2D(true_states)
 
 # MODEL
 
-A = F_1D(dt)
-print("A =", A)
-print("Type of A =", type(A))
-print("Shape of A =", np.shape(A))
-H = H_1D()
+A = F_2D(dt)
 
-Q = np.eye(2) * 0.1
-R = np.array([[1.5**2]])
+H = np.array([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0]
+])
 
+Q = np.eye(4) * 0.1
+R_mat = np.eye(2) * (1.5**2)
 
 # INITIAL STATE
-
-x_est = np.array([0, 8])
-P = np.eye(2)
+x_est = np.array([R, 0, 0, 5])  # imperfect initial guess
+P = np.eye(4)
 
 estimates = []
 
 # RUN KF
-
 for k in range(steps):
-    x_est, P = kf_step(x_est, P, z[k], A, H, Q, R)
+    x_est, P = kf_step(x_est, P, measurements[k], A, H, Q, R_mat)
     estimates.append(x_est.copy())
 
 estimates = np.array(estimates)
 
-# OUTPUT (TERMINAL)
+# OUTPUT
 
 print("Final estimated state:", x_est)
 
-# OUTPUT (PLOTS)
+# PLOT
 
-plot_position(x_true, estimates)
-plot_velocity(x_true, estimates)
+plot_trajectory(true_states, estimates)
