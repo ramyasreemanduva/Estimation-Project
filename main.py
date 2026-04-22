@@ -27,6 +27,9 @@ z = x_true[:, 0] + np.random.randn(steps) * 1.5
 # MODEL
 
 A = F_1D(dt)
+print("A =", A)
+print("Type of A =", type(A))
+print("Shape of A =", np.shape(A))
 H = H_1D()
 
 Q = np.eye(2) * 0.1
