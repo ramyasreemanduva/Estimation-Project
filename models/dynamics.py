@@ -29,6 +29,3 @@ def F_2D(dt):
 # Lane Constraint
 def apply_constraints(y):
     return np.clip(y, -2, 2)
-
-def apply_constraints(y):
-    return np.clip(y, -2, 2)
