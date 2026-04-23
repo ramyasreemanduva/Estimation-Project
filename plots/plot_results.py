@@ -8,10 +8,9 @@ def plot_trajectory(true, est):
 
     plt.xlabel("X position")
     plt.ylabel("Y position")
-    plt.title("Day 2: Circular Motion Tracking")
+    plt.title("Day 3: Constrained Motion")
 
     plt.legend()
     plt.grid()
-    plt.axis("equal")
 
     plt.show()
