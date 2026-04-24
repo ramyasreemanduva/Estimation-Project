@@ -2,43 +2,35 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def plot_trajectory(true_states, estimates, beacons, inner=None, outer=None):
-    """
-    Generates the 4 primary graphs needed for the technical report.
-    """
-    time = np.arange(len(true_states)) * 0.01  # dt = 0.01
+    # ... existing array setup ...
+    time = np.arange(len(true_states)) * 0.01
 
-    # --- FIGURE 1: 2D TRAJECTORY ---
-    plt.figure(figsize=(10, 6))
-    if inner: plt.plot(inner[0], inner[1], 'k-', alpha=0.5, label='Track Bounds')
-    if outer: plt.plot(outer[0], outer[1], 'k-', alpha=0.5)
+    # --- UPDATED LATERAL CALCULATION ---
+    # We find the distance to the center path for every estimated point
+    # true_states[:, 0:2] contains the (x, y) of the centerline
+    lat_positions = []
+    for i in range(len(estimates)):
+        # Find the distance from the estimate to every point on the true path
+        distances = np.sqrt((true_states[:, 0] - estimates[i, 0])**2 + 
+                            (true_states[:, 1] - estimates[i, 1])**2)
+        # The lateral deviation is the minimum distance found
+        lat_positions.append(np.min(distances))
     
-    plt.plot(estimates[:, 0], estimates[:, 1], 'r--', label='EKF Estimate')
-    plt.scatter(beacons[:, 0], beacons[:, 1], c='red', marker='x', label='Beacons')
-    for i, b in enumerate(beacons):
-        plt.text(b[0] + 2, b[1] + 2, f'$b_{i+1}$', color='red', fontsize=12, fontweight='bold')
-    
-    plt.title("Vehicle Localization (2D Trajectory)")
-    plt.xlabel("X Position (m)")
-    plt.ylabel("Y Position (m)")
-    plt.axis('equal')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    lateral_deviation = np.array(lat_positions)
 
-    # FIGURE 2: LATERAL POSITION
-    # We calculate deviation from the center of the lane (radius R=50 vs r=46)
-    # This is a simplified "unrolled" lateral view
-    lateral_error = np.sqrt(estimates[:, 0]**2 + estimates[:, 1]**2) - 50 
-    
+    # --- FIGURE 2: LATERAL POSITION (Constraint Validation) ---
     plt.figure(figsize=(10, 4))
-    plt.plot(time, lateral_error, 'k-', linewidth=1.5)
-    plt.axhline(y=2, color='r', linestyle='--', label='Upper Bound') # Width B-r=4m [cite: 14]
-    plt.axhline(y=-2, color='r', linestyle='--', label='Lower Bound')
+    plt.plot(time, lateral_deviation, 'k-', linewidth=1.5, label='Lateral Deviation')
+    
+    # According to coursework, width is 4m, so bounds are +/- 2m from center
+    plt.axhline(y=2, color='r', linestyle='--', label='Outer Wall (+2m)') [cite: 14]
+    plt.axhline(y=-2, color='r', linestyle='--', label='Inner Wall (-2m)') [cite: 14]
+    
     plt.title("Lateral Position Over Time (Constraint Validation)")
     plt.xlabel("Time (s)")
     plt.ylabel("Lateral Deviation (m)")
-    plt.ylim(-3, 3)
-    plt.legend()
+    plt.ylim(-3, 3) 
+    plt.legend(loc='upper right')
     plt.grid(True)
     plt.show()
 
