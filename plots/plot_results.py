@@ -1,18 +1,31 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def perform_analysis(true_states, estimates, dt=0.01):
+def perform_analysis(true_states, estimates, dt):
+    # --- ADD THIS LINE TO FIX THE ERROR ---
+    estimates = np.array(estimates) 
+    
     time = np.arange(len(estimates)) * dt
     
-    # --- 1. Longitudinal Analysis (Velocity) ---
-    # Estimated speed vs True speed
-    true_speed = np.sqrt(true_states[:,2]**2 + true_states[:,3]**2)
+    # Now this line will work perfectly
     est_speed = np.sqrt(estimates[:,2]**2 + estimates[:,3]**2)
+    true_speed = np.sqrt(true_states[:,2]**2 + true_states[:,3]**2)
     
-    # Speed Error
+    # Longitudinal Error (Velocity)
     long_error = true_speed - est_speed
     long_rmse = np.sqrt(np.mean(long_error**2))
 
+    # Lateral Error (Distance to path)
+    lat_errors = []
+    for i in range(len(estimates)):
+        dist_to_path = np.sqrt((true_states[:,0] - estimates[i,0])**2 + 
+                               (true_states[:,1] - estimates[i,1])**2)
+        lat_errors.append(np.min(dist_to_path))
+    
+    lat_rmse = np.sqrt(np.mean(np.array(lat_errors)**2))
+    
+    # Plotting code follows...
+    return long_rmse, lat_rmse
     # --- 2. Lateral Analysis (Cross-Track Error) ---
     # Finding distance from estimate to the nearest point on true trajectory
     lat_errors = []
