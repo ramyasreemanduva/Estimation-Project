@@ -33,4 +33,4 @@ for k in range(len(true_states)):
     x_est, P = ekf_update_multi(x_est, P, measurements[k], beacons, R)
     estimates.append(x_est.copy())
 
-plot_trajectory(true_states, np.array(estimates), beacons, inner_bound, outer_bound)
+plot_trajectory(true_states, estimates, beacons, inner_bound, outer_bound)
