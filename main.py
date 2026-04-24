@@ -10,9 +10,8 @@ beacons = get_beacons()
 measurements = measure_beacons(true_states, beacons)
 
 x_est = true_states[0].copy()
-P = np.eye(4) * 0.1 
-# Lower Q values make the estimate smoother and stay in lane [cite: 17]
-Q = np.diag([1e-6, 1e-6, 1e-4, 1e-4]) 
+P = np.eye(4) * 0.1
+Q = np.diag([1e-6, 1e-6, 1e-4, 1e-4]) # Smoothness assumption [cite: 7, 46]
 R = np.eye(len(beacons)) * (1.5**2) 
 
 estimates = []
