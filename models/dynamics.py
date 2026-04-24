@@ -1,25 +1,26 @@
 import numpy as np
 
-def ekf_predict(x, P, Q, dt):
-    from models.dynamics import F_2D
-    A = F_2D(dt)
-    x = A @ x
-    P = A @ P @ A.T + Q
-    return x, P
+def F_2D(dt):
+    """State transition matrix for constant velocity model."""
+    return np.array([
+        [1, 0, dt, 0],
+        [0, 1, 0, dt],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ])
 
-def ekf_update_multi(x, P, z_all, beacons, R_mat):
-    from models.dynamics import H_jacobian
-    H_list, y_list = [], []
-    for i, b in enumerate(beacons):
-        H_i = H_jacobian(x, b)
-        dist_pred = np.sqrt((x[0]-b[0])**2 + (x[1]-b[1])**2)
-        H_list.append(H_i[0])
-        y_list.append(z_all[i] - dist_pred)
+def get_beacons():
+    """Returns beacon positions located outside the lane region."""
+    # Placed outside the R=50 and r=46 boundaries
+    return np.array([
+        [20, 70],   # b1 [cite: 37]
+        [20, -70],  # b2 [cite: 37]
+        [180, 0]    # b3 [cite: 37]
+    ])
 
-    H = np.array(H_list)
-    y = np.array(y_list).reshape(-1, 1)
-    S = H @ P @ H.T + R_mat
-    K = P @ H.T @ np.linalg.inv(S)
-    x = x + (K @ y).flatten()
-    P = (np.eye(4) - K @ H) @ P
-    return x, P
+def H_jacobian(x, beacon):
+    """Linearizes the range measurement function for the EKF."""
+    dx = x[0] - beacon[0]
+    dy = x[1] - beacon[1]
+    dist = np.sqrt(dx**2 + dy**2) + 1e-6
+    return np.array([[dx/dist, dy/dist, 0, 0]])
