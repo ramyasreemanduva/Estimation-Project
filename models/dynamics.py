@@ -10,12 +10,10 @@ def F_2D(dt):
     ])
 
 def get_beacons():
-    """Returns beacon positions located outside the lane region."""
-    # Placed outside the R=50 and r=46 boundaries
     return np.array([
-        [20, 70],   # b1 [cite: 37]
-        [20, -70],  # b2 [cite: 37]
-        [180, 0]    # b3 [cite: 37]
+        [0, -50],  # b1
+        [0, 50],   # b2
+        [140, -45] # b3
     ])
 
 def H_jacobian(x, beacon):
