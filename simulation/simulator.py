@@ -4,84 +4,55 @@ import numpy as np
 
 def simulate_2D(steps, dt):
 
-    R = 50.0
-    rho = 20.0
-    d = 100.0
-    v = 10.0
+    # ---- Key shape points from your diagram ----
+    path_points = np.array([
+        [-15, -45],   # bottom-left
+        [10, 45],     # top-left
+        [120, 30],    # top-right
+        [120, 0],     # right arc start
+        [120, -20],   # right arc bottom
+        [90, -20],    # lower right straight
+        [-15, -45]    # close loop
+    ])
 
-    # Circle centers
-    A = np.array([0.0, 0.0])
-    B = np.array([d, 0.0])
+    # ---- Interpolate smooth path ----
+    pts = []
+    for i in range(len(path_points) - 1):
+        p1 = path_points[i]
+        p2 = path_points[i + 1]
 
-    # ---------- Correct tangent angle ----------
-    alpha = np.arcsin((R - rho) / d)
+        for t in np.linspace(0, 1, steps // (len(path_points)-1)):
+            pt = p1 + t * (p2 - p1)
+            pts.append(pt)
 
-    # ---------- Tangent points ----------
-    TL = A + R * np.array([ np.sin(alpha),  np.cos(alpha)])
-    TR = B + rho * np.array([ np.sin(alpha),  np.cos(alpha)])
+    pts = np.array(pts)
 
-    BL = A + R * np.array([-np.sin(alpha), -np.cos(alpha)])
-    BR = B + rho * np.array([-np.sin(alpha), -np.cos(alpha)])
+    # ---- Add curved arcs manually ----
+    theta = np.linspace(np.pi/2, -np.pi/2, 200)
 
-    # ---------- Segment lengths ----------
-    L_left = np.pi * R
-    L_top = np.linalg.norm(TR - TL)
-    L_right = np.pi * rho
-    L_bottom = np.linalg.norm(BL - BR)
+    # Left big arc
+    left_arc = np.column_stack([
+        50 * np.cos(theta),
+        50 * np.sin(theta)
+    ])
 
-    total_length = L_left + L_top + L_right + L_bottom
+    # Right small arc
+    right_arc = np.column_stack([
+        100 + 20 * np.cos(theta),
+        20 * np.sin(theta)
+    ])
 
-    s_vals = np.linspace(0, total_length, steps)
+    # ---- Combine everything ----
+    full_path = np.vstack([
+        left_arc,
+        pts,
+        right_arc
+    ])
 
-    data = []
+    # ---- Compute velocity ----
+    velocities = np.gradient(full_path, axis=0) / dt
 
-    for s in s_vals:
-
-        # ---------- LEFT ARC ----------
-        if s < L_left:
-            theta_start = np.arctan2(TL[1], TL[0])
-            theta = theta_start - s / R
-
-            x = R * np.cos(theta)
-            y = R * np.sin(theta)
-
-            vx = -v * np.sin(theta)
-            vy =  v * np.cos(theta)
-
-        # ---------- TOP STRAIGHT ----------
-        elif s < L_left + L_top:
-            t = (s - L_left) / L_top
-            pos = TL + t * (TR - TL)
-
-            x, y = pos
-            direction = (TR - TL) / L_top
-
-            vx, vy = v * direction
-
-        # ---------- RIGHT ARC ----------
-        elif s < L_left + L_top + L_right:
-            theta_start = np.arctan2(TR[1], TR[0] - d)
-            theta = theta_start - (s - (L_left + L_top)) / rho
-
-            x = d + rho * np.cos(theta)
-            y = rho * np.sin(theta)
-
-            vx = -v * np.sin(theta)
-            vy =  v * np.cos(theta)
-
-        # ---------- BOTTOM STRAIGHT ----------
-        else:
-            t = (s - (L_left + L_top + L_right)) / L_bottom
-            pos = BR + t * (BL - BR)
-
-            x, y = pos
-            direction = (BL - BR) / L_bottom
-
-            vx, vy = v * direction
-
-        data.append([x, y, vx, vy])
-
-    return np.array(data)
+    return np.hstack([full_path, velocities])
 
 
 # MEASUREMENTS
