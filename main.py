@@ -33,8 +33,18 @@ for k in range(len(true_states)):
     x_est, P = ekf_predict(x_est, P, Q, dt)
     x_est, P = ekf_update_multi(x_est, P, measurements[k], beacons, R)
     estimates.append(x_est.copy())
- 
+
+estimates = []
+for k in range(len(measurements)):
+    x_est, P = ekf_predict(x_est, P, Q, dt)
+    x_est, P = ekf_update_multi(x_est, P, measurements[k], beacons, R)
+    estimates.append(x_est.copy())
+
+# Convert here before passing to ANY plot or analysis function
+estimates = np.array(estimates)
+
 long_rmse, lat_rmse = perform_analysis(true_states, estimates, dt)
+ 
 
 print(f"Project Validation:")
 print(f"Longitudinal RMSE: {long_rmse:.4f} m/s")
