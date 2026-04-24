@@ -11,7 +11,7 @@ measurements = measure_beacons(true_states, beacons)
 
 x_est = true_states[0].copy()
 P = np.eye(4) * 0.1
-Q = np.diag([1e-6, 1e-6, 1e-4, 1e-4]) # Smoothness assumption [cite: 7, 46]
+Q = np.diag([1e-7, 1e-7, 1e-5, 1e-5]) # Extremely low Q for perfect tracking
 R = np.eye(len(beacons)) * (1.5**2) 
 
 estimates = []
