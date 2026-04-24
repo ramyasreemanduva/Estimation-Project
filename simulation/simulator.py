@@ -1,40 +1,54 @@
 import numpy as np
 
-def get_track_geometry(steps, dt=0.1):
-    """Generates True Path, Inner Bound, and Outer Bound."""
-    d = 100
-    center_a = np.array([50, 0])
-    center_b = np.array([150, 0])
+def get_track_geometry(dt=0.01):
+    # Parameters: R=50, r=46 (Width=4m), rho=20, d=100
+    R_out, r_in, rho_mid, d = 50, 46, 20, 100
+    R_mid = (R_out + r_in) / 2 # 48m centerline
     
-    # Radii: [True, Inner, Outer]
-    R_vals = [50, 42, 58]
-    rho_vals = [20, 12, 28]
+    alpha = np.arcsin((R_mid - rho_mid) / d)
+    A = np.array([R_out, 0])
+    B = np.array([R_out + d, 0])
     
-    paths = []
-    for R, rho in zip(R_vals, rho_vals):
-        alpha = np.arcsin((R - rho) / d)
-        
-        # Arcs
-        theta_l = np.linspace(np.pi/2 + alpha, 1.5*np.pi - alpha, steps//3)
-        x_l, y_l = center_a[0] + R * np.cos(theta_l), center_a[1] + R * np.sin(theta_l)
-        
-        theta_r = np.linspace(-np.pi/2 + alpha, np.pi/2 - alpha, steps//3)
-        x_r, y_r = center_b[0] + rho * np.cos(theta_r), center_b[1] + rho * np.sin(theta_r)
-        
-        # Straights
-        x_btm = np.linspace(x_l[-1], x_r[0], steps//6)
-        y_btm = np.linspace(y_l[-1], y_r[0], steps//6)
-        x_top = np.linspace(x_r[-1], x_l[0], steps//6)
-        y_top = np.linspace(y_r[-1], y_l[0], steps//6)
-        
-        paths.append((np.concatenate([x_l, x_btm, x_r, x_top]), 
-                      np.concatenate([y_l, y_btm, y_r, y_top])))
-    return paths
+    # CRITICAL FIX: Lock the target velocity to exactly 10.0 m/s
+    v_target = 10.0 
+    ds = v_target * dt
 
-def measure_beacons(true_states, beacons, noise_std=1.5):
-    """Returns array of shape (steps, num_beacons)."""
-    measurements = []
-    for state in true_states:
-        z_t = [np.sqrt((state[0]-b[0])**2 + (state[1]-b[1])**2) + np.random.normal(0, noise_std) for b in beacons]
-        measurements.append(z_t)
-    return np.array(measurements)
+    def generate_continuous_path(R_val, rho_val):
+        len_arc_A = (np.pi + 2*alpha) * R_val
+        len_arc_B = (np.pi - 2*alpha) * rho_val
+        len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
+        total_len = len_arc_A + len_arc_B + (2 * len_str)
+        
+        path = []
+        dist = 0
+        while dist < total_len:
+            if dist < len_arc_A: 
+                theta = (np.pi/2 + alpha) + (dist / R_val)
+                x, y = A[0] + R_val * np.cos(theta), A[1] + R_val * np.sin(theta)
+                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
+            elif dist < (len_arc_A + len_str): 
+                s = (dist - len_arc_A) / len_str
+                p1 = A + R_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
+                p2 = B + rho_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
+                pos = p1 + s * (p2 - p1)
+                x, y, vx, vy = pos[0], pos[1], v_target * np.cos(-alpha), v_target * np.sin(-alpha)
+            elif dist < (len_arc_A + len_str + len_arc_B): 
+                s_arc = dist - (len_arc_A + len_str)
+                theta = (1.5*np.pi - alpha) + (s_arc / rho_val)
+                x, y = B[0] + rho_val * np.cos(theta), B[1] + rho_val * np.sin(theta)
+                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
+            else: 
+                s = (dist - (len_arc_A + len_str + len_arc_B)) / len_str
+                p1 = B + rho_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
+                p2 = A + R_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
+                pos = p1 + s * (p2 - p1)
+                x, y, vx, vy = pos[0], pos[1], -v_target * np.cos(alpha), -v_target * np.sin(alpha)
+            
+            path.append([x, y, vx, vy])
+            dist += ds
+        return np.array(path)
+
+    return generate_continuous_path(R_mid, rho_mid)
+
+def measure_beacons(states, beacons):
+    return np.array([[np.sqrt((s[0]-b[0])**2 + (s[1]-b[1])**2) + np.random.normal(0, 1.5) for b in beacons] for s in states])
