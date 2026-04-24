@@ -1,42 +1,49 @@
 import numpy as np
+from models.dynamics import apply_track_constraint
 
-# Circular Motion Simulation
+# Vehicle Simulation 
 
 def simulate_2D(steps, dt):
-    R = 50          # radius
-    omega = 0.2     # angular speed
-    theta = 0
 
+    R_center = 48
+    omega = 10 / R_center  # v = r*omega
+
+    theta = 0
     data = []
 
     for _ in range(steps):
-        # Position
-        x = R * np.cos(theta)
-        y = R * np.sin(theta)
 
-        # Velocity (important for state)
-        vx = -R * omega * np.sin(theta)
-        vy = R * omega * np.cos(theta)
+        # lateral motion (small)
+        lateral = np.clip(np.random.randn() * 0.3, -2, 2)
+
+        r_actual = R_center + lateral
+
+        x = r_actual * np.cos(theta)
+        y = r_actual * np.sin(theta)
+
+        # apply constraint
+        x, y = apply_track_constraint(x, y)
+
+        vx = -r_actual * omega * np.sin(theta)
+        vy = r_actual * omega * np.cos(theta)
 
         data.append([x, y, vx, vy])
 
-        # Move angle forward
         theta += omega * dt
 
     return np.array(data)
 
-
 # Beacon Measurements
 
 def measure_beacons(states, beacons):
+
     measurements = []
 
     for state in states:
         z = []
         for bx, by in beacons:
             dist = np.sqrt((state[0] - bx)**2 + (state[1] - by)**2)
-            noisy_dist = dist + np.random.randn() * 1.0  # reduced noise
-            z.append(noisy_dist)
+            z.append(dist + np.random.randn() * 1.5)
         measurements.append(z)
 
     return np.array(measurements)
