@@ -43,7 +43,7 @@ for k in range(len(measurements)):
 # Convert here before passing to ANY plot or analysis function
 estimates = np.array(estimates)
 
-long_rmse, lat_rmse = perform_analysis(true_states, estimates, dt)
+long_rmse, lat_rmse = plot_analysis(true_states, estimates, dt)
  
 
 print(f"Project Validation:")
