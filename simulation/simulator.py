@@ -4,22 +4,24 @@ import numpy as np
 
 import numpy as np
 
-import numpy as np
-
 def simulate_2D(steps, dt):
 
-    R = 50      # left curve
-    rho = 20    # right curve
-    d = 100     # horizontal distance
+    R = 50      # left big radius
+    rho = 20    # right small radius
+    d = 100
     v = 10
 
     data = []
 
+    # centers
+    A = np.array([0, 0])        # left center
+    B = np.array([d, 0])        # right center
+
     # arc lengths
-    L1 = np.pi * R        # left half-circle
-    L2 = d                # top straight
-    L3 = np.pi * rho      # right half-circle
-    L4 = d                # bottom straight
+    L1 = np.pi * R
+    L2 = d
+    L3 = np.pi * rho
+    L4 = d
 
     total = L1 + L2 + L3 + L4
 
@@ -28,42 +30,42 @@ def simulate_2D(steps, dt):
     for s in s_vals:
 
         if s < L1:
-            # LEFT BIG ARC (center A = (0,0))
+            # LEFT ARC (top → bottom)
             theta = np.pi/2 - s / R
 
-            x = R * np.cos(theta)
-            y = R * np.sin(theta)
+            x = A[0] + R * np.cos(theta)
+            y = A[1] + R * np.sin(theta)
 
             vx = -v * np.sin(theta)
             vy = v * np.cos(theta)
 
         elif s < L1 + L2:
-            # TOP STRAIGHT
+            # BOTTOM STRAIGHT (left → right)
             s2 = s - L1
 
-            x = R + s2
-            y = 0
+            x = A[0] + s2
+            y = -R
 
             vx = v
             vy = 0
 
         elif s < L1 + L2 + L3:
-            # RIGHT SMALL ARC (center B = (d,0))
+            # RIGHT ARC (bottom → top)
             s3 = s - (L1 + L2)
-            theta = np.pi/2 - s3 / rho
+            theta = -np.pi/2 + s3 / rho
 
-            x = d + rho * np.cos(theta)
-            y = rho * np.sin(theta)
+            x = B[0] + rho * np.cos(theta)
+            y = B[1] + rho * np.sin(theta)
 
             vx = -v * np.sin(theta)
             vy = v * np.cos(theta)
 
         else:
-            # BOTTOM STRAIGHT
+            # TOP STRAIGHT (right → left)
             s4 = s - (L1 + L2 + L3)
 
-            x = d + rho - s4
-            y = 0
+            x = B[0] - s4
+            y = R
 
             vx = -v
             vy = 0
