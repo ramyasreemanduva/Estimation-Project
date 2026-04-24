@@ -4,64 +4,69 @@ import numpy as np
 
 import numpy as np
 
+import numpy as np
+
 def simulate_2D(steps, dt):
 
-    R = 50        # curve radius
-    d = 100       # straight length
-    v = 10        # velocity
+    R = 50      # left curve
+    rho = 20    # right curve
+    d = 100     # horizontal distance
+    v = 10
 
     data = []
 
-    # lengths of each segment
-    L_straight = d
-    L_curve = np.pi * R   # half circle
+    # arc lengths
+    L1 = np.pi * R        # left half-circle
+    L2 = d                # top straight
+    L3 = np.pi * rho      # right half-circle
+    L4 = d                # bottom straight
 
-    total_length = 2*L_straight + 2*L_curve
+    total = L1 + L2 + L3 + L4
 
-    # distance traveled along track
-    s_vals = np.linspace(0, total_length, steps)
+    s_vals = np.linspace(0, total, steps)
 
     for s in s_vals:
 
-        if s < L_straight:
-            # Top straight (left → right)
-            x = -d/2 + s
-            y = R
+        if s < L1:
+            # LEFT BIG ARC (center A = (0,0))
+            theta = np.pi/2 - s / R
+
+            x = R * np.cos(theta)
+            y = R * np.sin(theta)
+
+            vx = -v * np.sin(theta)
+            vy = v * np.cos(theta)
+
+        elif s < L1 + L2:
+            # TOP STRAIGHT
+            s2 = s - L1
+
+            x = R + s2
+            y = 0
 
             vx = v
             vy = 0
 
-        elif s < L_straight + L_curve:
-            # Right semicircle
-            s_curve = s - L_straight
-            theta = np.pi/2 - s_curve / R
+        elif s < L1 + L2 + L3:
+            # RIGHT SMALL ARC (center B = (d,0))
+            s3 = s - (L1 + L2)
+            theta = np.pi/2 - s3 / rho
 
-            x = d/2 + R * np.cos(theta)
-            y = R * np.sin(theta)
+            x = d + rho * np.cos(theta)
+            y = rho * np.sin(theta)
 
             vx = -v * np.sin(theta)
             vy = v * np.cos(theta)
 
-        elif s < 2*L_straight + L_curve:
-            # Bottom straight (right → left)
-            s_line = s - (L_straight + L_curve)
+        else:
+            # BOTTOM STRAIGHT
+            s4 = s - (L1 + L2 + L3)
 
-            x = d/2 - s_line
-            y = -R
+            x = d + rho - s4
+            y = 0
 
             vx = -v
             vy = 0
-
-        else:
-            # Left semicircle
-            s_curve = s - (2*L_straight + L_curve)
-            theta = -np.pi/2 - s_curve / R
-
-            x = -d/2 + R * np.cos(theta)
-            y = R * np.sin(theta)
-
-            vx = -v * np.sin(theta)
-            vy = v * np.cos(theta)
 
         data.append([x, y, vx, vy])
 
