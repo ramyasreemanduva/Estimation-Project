@@ -8,12 +8,11 @@ def F_2D(dt):
         [0, 0, 1, 0],
         [0, 0, 0, 1]
     ])
-
 def get_beacons():
     return np.array([
-        [0, -50],  # b1
-        [0, 50],   # b2
-        [140, -45] # b3
+        [0, -50],  # b1: Bottom Left
+        [0, 50],   # b2: Top Left
+        [180, 0]   # b3: Far Right (Centered with the small turn)
     ])
 
 def H_jacobian(x, beacon):
