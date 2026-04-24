@@ -1,5 +1,6 @@
 import numpy as np
-from models.dynamics import apply_constraints
+
+# True Motion
 
 def simulate_2D(steps, dt):
     x, y = 0, 0
@@ -10,14 +11,22 @@ def simulate_2D(steps, dt):
     for _ in range(steps):
         x += vx * dt
         y += vy * dt
-
-        # Apply constraint
-        y = apply_constraints(y)
-
         data.append([x, y, vx, vy])
 
     return np.array(data)
 
 
-def measure_2D(true_states):
-    return true_states[:, :2] + np.random.randn(len(true_states), 2) * 1.5
+# Beacon Measurements
+
+def measure_beacons(states, beacons):
+    measurements = []
+
+    for state in states:
+        z = []
+        for bx, by in beacons:
+            dist = np.sqrt((state[0] - bx)**2 + (state[1] - by)**2)
+            noisy_dist = dist + np.random.randn() * 1.5
+            z.append(noisy_dist)
+        measurements.append(z)
+
+    return np.array(measurements)
