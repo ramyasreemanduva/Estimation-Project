@@ -38,7 +38,7 @@ estimates = np.array(estimates)
 
 # --- 4. Plotting and Analysis ---
 # Call the plot_analysis function, which generates the graphs and returns the RMSE metrics
-long_rmse, lat_rmse = plot_analysis(true_states, estimates, dt)
+long_rmse, lat_rmse = plot_analysis(true_states, estimates, beacons, inner_bounds, outer_bounds, dt)
 
 # Print the final validation metrics to the terminal
 print("--- ELE8101 Project Validation Complete ---")
