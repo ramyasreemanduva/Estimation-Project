@@ -4,6 +4,8 @@ import numpy as np
 
 import numpy as np
 
+import numpy as np
+
 def simulate_2D(steps, dt):
 
     R = 50.0
@@ -11,39 +13,75 @@ def simulate_2D(steps, dt):
     d = 100.0
     v = 10.0
 
-    # ---------- Build centerline track ----------
-    pts = []
+    A = np.array([0.0, 0.0])
+    B = np.array([d, 0.0])
 
-    # 1. LEFT ARC (big circle)
-    theta1 = np.linspace(np.pi/2, -np.pi/2, steps//4)
-    x1 = R * np.cos(theta1)
-    y1 = R * np.sin(theta1)
+    # ---------- TRUE tangent angle ----------
+    alpha = np.arccos((R - rho) / d)
 
-    # 2. BOTTOM STRAIGHT (slanted)
-    x2 = np.linspace(x1[-1], d, steps//4)
-    y2 = np.linspace(y1[-1], -20, steps//4)
+    # ---------- tangent direction ----------
+    dx = np.cos(alpha)
+    dy = np.sin(alpha)
 
-    # 3. RIGHT ARC (small circle)
-    theta3 = np.linspace(-np.pi/2, np.pi/2, steps//4)
-    x3 = d + rho * np.cos(theta3)
-    y3 = rho * np.sin(theta3)
+    # ---------- tangent points ----------
+    TL = np.array([ R*dy,  R*dx])
+    BL = np.array([-R*dy, -R*dx])
 
-    # 4. TOP STRAIGHT (slanted)
-    x4 = np.linspace(x3[-1], x1[0], steps//4)
-    y4 = np.linspace(y3[-1], y1[0], steps//4)
+    TR = np.array([d + rho*dy,  rho*dx])
+    BR = np.array([d - rho*dy, -rho*dx])
 
-    # Combine path
-    x = np.concatenate([x1, x2, x3, x4])
-    y = np.concatenate([y1, y2, y3, y4])
+    # ---------- segment lengths ----------
+    L1 = np.pi * R
+    L2 = np.linalg.norm(TR - TL)
+    L3 = np.pi * rho
+    L4 = np.linalg.norm(BL - BR)
 
-    # ---------- Compute velocity ----------
-    vx = np.gradient(x, dt)
-    vy = np.gradient(y, dt)
+    total = L1 + L2 + L3 + L4
+    s_vals = np.linspace(0, total, steps)
 
-    states = np.column_stack([x, y, vx, vy])
+    data = []
 
-    return states
+    for s in s_vals:
 
+        # LEFT ARC
+        if s < L1:
+            theta = np.pi/2 - s / R
+            x = R * np.cos(theta)
+            y = R * np.sin(theta)
+
+            vx = -v * np.sin(theta)
+            vy =  v * np.cos(theta)
+
+        # TOP STRAIGHT
+        elif s < L1 + L2:
+            t = (s - L1) / L2
+            pos = TL + t * (TR - TL)
+
+            x, y = pos
+            direction = (TR - TL) / L2
+            vx, vy = v * direction
+
+        # RIGHT ARC
+        elif s < L1 + L2 + L3:
+            theta = np.pi/2 - (s - (L1 + L2)) / rho
+            x = d + rho * np.cos(theta)
+            y = rho * np.sin(theta)
+
+            vx = -v * np.sin(theta)
+            vy =  v * np.cos(theta)
+
+        # BOTTOM STRAIGHT
+        else:
+            t = (s - (L1 + L2 + L3)) / L4
+            pos = BR + t * (BL - BR)
+
+            x, y = pos
+            direction = (BL - BR) / L4
+            vx, vy = v * direction
+
+        data.append([x, y, vx, vy])
+
+    return np.array(data)
 
 # MEASUREMENTS
 
