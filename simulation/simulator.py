@@ -13,9 +13,12 @@ def get_track_geometry(dt=0.01):
     v_target = 10.0 
     ds = v_target * dt
 
-    def generate_continuous_path(R_val, rho_val):
-        len_arc_A = (np.pi + 2*alpha) * R_val
-        len_arc_B = (np.pi - 2*alpha) * rho_val
+   def generate_continuous_path(R_val, rho_val):
+        # CRITICAL FIX: The signs are swapped here. 
+        # Large circle A has a smaller arc angle. Small circle B has a larger arc angle.
+        len_arc_A = (np.pi - 2*alpha) * R_val  
+        len_arc_B = (np.pi + 2*alpha) * rho_val 
+        
         len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
         total_len = len_arc_A + len_arc_B + (2 * len_str)
         
@@ -47,7 +50,6 @@ def get_track_geometry(dt=0.01):
             path.append([x, y, vx, vy])
             dist += ds
         return np.array(path)
-
     # Re-added the missing boundary logic
     def get_synced_bounds(Rv, rhov):
         al_bound = np.arcsin((Rv - rhov) / d)
