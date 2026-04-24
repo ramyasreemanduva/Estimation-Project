@@ -18,7 +18,7 @@ def plot_trajectory(true_states, estimates, beacons, inner, outer):
     plt.figure(figsize=(10, 4))
     plt.plot(time, yt, 'k', label='Lateral position, $y_t$')
     plt.axhline(y=2, color='r', linestyle='--', label='Bound (2m)') 
-    plt.ylim(-0.5, 3); plt.grid(True); plt.ylabel("Lateral position, $y_t$ (m)"); plt.xlabel("Time (s)") [cite: 60, 69]
+    plt.ylim(-0.5, 3); plt.grid(True); plt.ylabel("Lateral position, $y_t$ (m)"); plt.xlabel("Time (s)") 
 
     # Figure 3: Velocity Constraint Validation 
     speed = np.sqrt(estimates[:,2]**2 + estimates[:,3]**2)
