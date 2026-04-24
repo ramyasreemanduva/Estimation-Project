@@ -14,6 +14,8 @@ def plot_trajectory(true_states, estimates, beacons, inner=None, outer=None):
     
     plt.plot(estimates[:, 0], estimates[:, 1], 'r--', label='EKF Estimate')
     plt.scatter(beacons[:, 0], beacons[:, 1], c='red', marker='x', label='Beacons')
+    for i, b in enumerate(beacons):
+        plt.text(b[0] + 2, b[1] + 2, f'$b_{i+1}$', color='red', fontsize=12, fontweight='bold')
     
     plt.title("Vehicle Localization (2D Trajectory)")
     plt.xlabel("X Position (m)")
