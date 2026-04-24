@@ -23,31 +23,39 @@ def ekf_predict(x, P, Q, dt):
 
 # EKF Update (Nonlinear)
 
-def ekf_update(x, P, z, beacon, R):
+def ekf_update_multi(x, P, z_all, beacons, R):
 
-    # Difference between state and beacon
-    dx = x[0] - beacon[0]
-    dy = x[1] - beacon[1]
+    H_list = []
+    y_list = []
 
-    # Predicted measurement 
-    r = np.sqrt(dx**2 + dy**2)
+    for i, beacon in enumerate(beacons):
+        dx = x[0] - beacon[0]
+        dy = x[1] - beacon[1]
 
-    # Jacobian matrix
-    H = H_jacobian(x, beacon)
+        r = np.sqrt(dx**2 + dy**2) + 1e-6  # avoid divide by zero
 
-    # Innovation 
-    y = z - r
+        # Jacobian row
+        H_i = [dx/r, dy/r, 0, 0]
+        H_list.append(H_i)
 
-    # Innovation covariance
+        # error
+        y_i = z_all[i] - r
+        y_list.append(y_i)
+
+    # Convert to arrays
+    H = np.array(H_list)
+    y = np.array(y_list).reshape(-1, 1)
+
+    # Covariance
     S = H @ P @ H.T + R
 
     # Kalman Gain
     K = P @ H.T @ np.linalg.inv(S)
 
-    # Update state
-    x = x + (K * y).flatten()
-
-    # Update covariance
+    # Update
+    x = x + (K @ y).flatten()
     P = (np.eye(4) - K @ H) @ P
 
     return x, P
+
+
