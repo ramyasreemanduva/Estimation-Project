@@ -4,25 +4,22 @@ import numpy as np
 
 def simulate_2D(steps, dt):
 
-    R = 48        # center radius
-    v = 10        # velocity
-    omega = v / R
+    R = 48
+    omega = 10 / R
 
-    theta = 0
     data = []
 
-    for _ in range(steps):
+    theta_vals = np.linspace(0, 2*np.pi, steps)
 
-        # Smooth circular motion
+    for theta in theta_vals:
+
         x = R * np.cos(theta)
         y = R * np.sin(theta)
 
-        vx = -v * np.sin(theta)
-        vy = v * np.cos(theta)
+        vx = -R * omega * np.sin(theta)
+        vy = R * omega * np.cos(theta)
 
         data.append([x, y, vx, vy])
-
-        theta += omega * dt
 
     return np.array(data)
 
