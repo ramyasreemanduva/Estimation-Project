@@ -1,17 +1,27 @@
 import numpy as np
 
-# True Motion
+# Circular Motion Simulation
 
 def simulate_2D(steps, dt):
-    x, y = 0, 0
-    vx, vy = 10, 0.5
+    R = 50          # radius
+    omega = 0.2     # angular speed
+    theta = 0
 
     data = []
 
     for _ in range(steps):
-        x += vx * dt
-        y += vy * dt
+        # Position
+        x = R * np.cos(theta)
+        y = R * np.sin(theta)
+
+        # Velocity (important for state)
+        vx = -R * omega * np.sin(theta)
+        vy = R * omega * np.cos(theta)
+
         data.append([x, y, vx, vy])
+
+        # Move angle forward
+        theta += omega * dt
 
     return np.array(data)
 
@@ -25,7 +35,7 @@ def measure_beacons(states, beacons):
         z = []
         for bx, by in beacons:
             dist = np.sqrt((state[0] - bx)**2 + (state[1] - by)**2)
-            noisy_dist = dist + np.random.randn() * 1.5
+            noisy_dist = dist + np.random.randn() * 1.0  # reduced noise
             z.append(noisy_dist)
         measurements.append(z)
 
