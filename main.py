@@ -28,9 +28,13 @@ R = np.eye(len(beacons)) * (1.5**2)
 estimates = []
 
 # EKF LOOP
+# EKF LOOP
 for k in range(len(true_states)):
     x_est, P = ekf_predict(x_est, P, Q, dt)
     x_est, P = ekf_update_multi(x_est, P, measurements[k], beacons, R)
     estimates.append(x_est.copy())
 
+estimates = np.array(estimates) 
+
+# Now call the plot function
 plot_trajectory(true_states, estimates, beacons, inner_bound, outer_bound)
