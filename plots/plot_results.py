@@ -1,68 +1,53 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def perform_analysis(true_states, estimates, dt):
-    # --- ADD THIS LINE TO FIX THE ERROR ---
-    estimates = np.array(estimates) 
-    
+def plot_analysis(true_states, estimates, dt=0.01):
+    # Ensure estimates is a NumPy array to allow slicing [:, index]
+    estimates = np.array(estimates)
     time = np.arange(len(estimates)) * dt
-    
-    # Now this line will work perfectly
-    est_speed = np.sqrt(estimates[:,2]**2 + estimates[:,3]**2)
+
+    # --- LONGITUDINAL ANALYSIS (Velocity) ---
+    # Total Speed = sqrt(vx^2 + vy^2)
     true_speed = np.sqrt(true_states[:,2]**2 + true_states[:,3]**2)
-    
-    # Longitudinal Error (Velocity)
-    long_error = true_speed - est_speed
-    long_rmse = np.sqrt(np.mean(long_error**2))
+    est_speed = np.sqrt(estimates[:,2]**2 + estimates[:,3]**2)
 
-    # Lateral Error (Distance to path)
-    lat_errors = []
+    # --- LATERAL ANALYSIS (Cross-Track Error) ---
+    # Calculation: Distance from estimate to the nearest point on the centerline
+    lat_error = []
     for i in range(len(estimates)):
-        dist_to_path = np.sqrt((true_states[:,0] - estimates[i,0])**2 + 
-                               (true_states[:,1] - estimates[i,1])**2)
-        lat_errors.append(np.min(dist_to_path))
+        # Calculate Euclidean distance to all points on the true path
+        dx = true_states[:,0] - estimates[i,0]
+        dy = true_states[:,1] - estimates[i,1]
+        dist = np.sqrt(dx**2 + dy**2)
+        lat_error.append(np.min(dist))
     
-    lat_rmse = np.sqrt(np.mean(np.array(lat_errors)**2))
-    
-    # Plotting code follows...
-    return long_rmse, lat_rmse
-    # --- 2. Lateral Analysis (Cross-Track Error) ---
-    # Finding distance from estimate to the nearest point on true trajectory
-    lat_errors = []
-    for i in range(len(estimates)):
-        # Euclidean distance to all points in ground truth
-        dist_to_path = np.sqrt((true_states[:,0] - estimates[i,0])**2 + 
-                               (true_states[:,1] - estimates[i,1])**2)
-        lat_errors.append(np.min(dist_to_path))
-    
-    lat_errors = np.array(lat_errors)
-    lat_rmse = np.sqrt(np.mean(lat_errors**2))
+    lat_error = np.array(lat_error)
 
-    # --- 3. Plotting the Analysis ---
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-    
-    # Longitudinal Plot
-    ax1.plot(time, est_speed, 'b', label='Estimated Speed')
-    ax1.plot(time, true_speed, 'g--', alpha=0.7, label='True Speed')
-    ax1.axhline(y=10, color='r', linestyle=':', label='Target (10m/s)')
-    ax1.set_title(f"Longitudinal Analysis (RMSE: {long_rmse:.4f} m/s)")
-    ax1.set_ylabel("Velocity (m/s)")
-    ax1.legend()
-    ax1.grid(True)
+    # --- PLOTTING ---
+    plt.figure(figsize=(10, 8))
 
-    # Lateral Plot
-    ax2.plot(time, lat_errors, 'k', label='Lateral Deviation ($y_t$)')
-    ax2.axhline(y=2.0, color='r', linestyle='--', label='Lane Bound (2m)')
-    ax2.set_title(f"Lateral Analysis (RMSE: {lat_rmse:.4f} m)")
-    ax2.set_ylabel("Error (m)")
-    ax2.set_xlabel("Time (s)")
-    ax2.legend()
-    ax2.grid(True)
+    # Top Plot: Longitudinal (Speed)
+    plt.subplot(2, 1, 1)
+    plt.plot(time, est_speed, 'r', label='Estimated Speed')
+    plt.plot(time, true_speed, 'b', alpha=0.3, label='True Speed')
+    plt.axhline(y=10, color='g', linestyle='--', label='Target (10m/s)')
+    plt.ylabel("Velocity (m/s)")
+    plt.title("Longitudinal Analysis: Speed Tracking")
+    plt.legend()
+    plt.grid(True)
+
+    # Bottom Plot: Lateral (Lane Deviation)
+    plt.subplot(2, 1, 2)
+    plt.plot(time, lat_error, 'k', label='Lateral Deviation ($y_t$)')
+    plt.axhline(y=2.0, color='r', linestyle='--', label='Lane Bound (2m)')
+    plt.ylabel("Lateral Error (m)")
+    plt.xlabel("Time (s)")
+    plt.title("Lateral Analysis: Cross-Track Deviation")
+    plt.legend()
+    plt.grid(True)
 
     plt.tight_layout()
     plt.show()
-    
-    return long_rmse, lat_rmse
 def plot_trajectory(true_states, estimates, beacons, inner=None, outer=None):
     plt.figure(figsize=(12, 6))
     
