@@ -1,49 +1,63 @@
 import numpy as np
 
 def get_track_geometry(dt=0.01):
-    # Parameters per project description and user request 
+    # Parameters from problem statement
     R_out, r_in, rho_mid, d = 50, 46, 20, 100
-    R_mid = (R_out + r_in) / 2 # 48m centerline
-    v_target = 10.0 # Target velocity 
-    ds = v_target * dt 
+    R_mid = (R_out + r_in) / 2 # Centerline 48m
     
-    A, B = np.array([50, 0]), np.array([150, 0])
+    # Calculate Tangent Angle alpha
     alpha = np.arcsin((R_mid - rho_mid) / d)
     
-    # Calculate lengths for the centerline
-    len_arc_A = (np.pi + 2*alpha) * R_mid
-    len_arc_B = (np.pi - 2*alpha) * rho_mid
-    len_str = np.sqrt(d**2 - (R_mid - rho_mid)**2)
-    total_len = len_arc_A + len_arc_B + (2 * len_str)
+    A = np.array([R_out, 0])
+    B = np.array([R_out + d, 0])
+    v_target = 10.0 # m/s
+    ds = v_target * dt
 
-    states = []
-    dist = 0
-    while dist < total_len:
-        if dist < len_arc_A: # Left Arc
-            theta = (np.pi/2 + alpha) + (dist / R_mid)
-            x, y = A[0] + R_mid * np.cos(theta), A[1] + R_mid * np.sin(theta)
-            vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-        elif dist < (len_arc_A + len_str): # Bottom Straight
-            s_str = (dist - len_arc_A) / len_str
-            p1 = A + R_mid * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
-            p2 = B + rho_mid * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
-            pos = p1 + s_str * (p2 - p1)
-            x, y, vx, vy = pos[0], pos[1], v_target * np.cos(-alpha), v_target * np.sin(-alpha)
-        # (Simplified segments for brevity - follow the same tangent logic)
-        else: x, y, vx, vy = states[-1] # Placeholder for full loop
-            
-        states.append([x, y, vx, vy])
-        dist += ds
+    def generate_full_path(R_val, rho_val):
+        # Centerline distance calculation
+        len_arc_A = (np.pi + 2*alpha) * R_val
+        len_arc_B = (np.pi - 2*alpha) * rho_val
+        len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
+        total_len = len_arc_A + len_arc_B + (2 * len_str)
+        
+        path = []
+        dist = 0
+        while dist < total_len:
+            if dist < len_arc_A: # Left Arc
+                theta = (np.pi/2 + alpha) + (dist / R_val)
+                x, y = A[0] + R_val * np.cos(theta), A[1] + R_val * np.sin(theta)
+                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
+            elif dist < (len_arc_A + len_str): # Bottom Straight
+                s = (dist - len_arc_A) / len_str
+                p1 = A + R_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
+                p2 = B + rho_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
+                pos = p1 + s * (p2 - p1)
+                vx, vy = v_target * np.cos(-alpha), v_target * np.sin(-alpha)
+                x, y = pos[0], pos[1]
+            elif dist < (len_arc_A + len_str + len_arc_B): # Right Arc
+                s_arc = dist - (len_arc_A + len_str)
+                theta = (1.5*np.pi - alpha) + (s_arc / rho_val)
+                x, y = B[0] + rho_val * np.cos(theta), B[1] + rho_val * np.sin(theta)
+                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
+            else: # Top Straight
+                s = (dist - (len_arc_A + len_str + len_arc_B)) / len_str
+                p1 = B + rho_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
+                p2 = A + R_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
+                pos = p1 + s * (p2 - p1)
+                vx, vy = -v_target * np.cos(alpha), -v_target * np.sin(alpha)
+                x, y = pos[0], pos[1]
+            path.append([x, y, vx, vy])
+            dist += ds
+        return np.array(path)
 
-    # Boundary generation for validation 
-    def gen_bound(R_val, rho_val):
-        t_l = np.linspace(np.pi/2 + alpha, 1.5*np.pi - alpha, 100)
+    # Static boundaries for plotting
+    def get_bounds(R_v, rho_v):
+        t_l = np.linspace(0.5*np.pi + alpha, 1.5*np.pi - alpha, 100)
         t_r = np.linspace(1.5*np.pi - alpha, 2.5*np.pi + alpha, 100)
-        return np.concatenate([A[0]+R_val*np.cos(t_l), B[0]+rho_val*np.cos(t_r)]), \
-               np.concatenate([A[1]+R_val*np.sin(t_l), B[1]+rho_val*np.sin(t_r)])
+        return np.concatenate([A[0]+R_v*np.cos(t_l), B[0]+rho_v*np.cos(t_r)]), \
+               np.concatenate([A[1]+R_v*np.sin(t_l), B[1]+rho_v*np.sin(t_r)])
 
-    return np.array(states), gen_bound(r_in, 18), gen_bound(R_out, 22)
-
+    return generate_full_path(R_mid, rho_mid), get_bounds(r_in, 18), get_bounds(R_out, 22)
 def measure_beacons(states, beacons):
     # Standard deviation 1.5m [cite: 19]
     return np.array([[np.sqrt((s[0]-b[0])**2 + (s[1]-b[1])**2) + np.random.normal(0, 1.5) for b in beacons] for s in states])
