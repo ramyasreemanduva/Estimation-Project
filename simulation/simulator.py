@@ -3,64 +3,66 @@ import numpy as np
 # SIMULATION
 
 def simulate_2D(steps, dt):
-    # Given
-    R = 50.0     # outer left radius
-    rho = 20.0   # right tight radius
-    d = 100.0    # distance A->B
+    # Track parameters
+    R = 50.0      # left (big) radius
+    rho = 20.0    # right (small) radius
+    d = 100.0     # distance between arc centers
     v = 10.0
 
     # Centers
-    A = np.array([0.0, 0.0])
-    B = np.array([d, 0.0])
+    A = np.array([0.0, 0.0])   # left center
+    B = np.array([d, 0.0])     # right center
 
-    # We build a smooth centerline by blending:
-    # left big arc (around A, radius ~ R-2)  +  right small arc (around B, radius ~ rho+2)
-    # and connect them with *tangent* lines using a parameter t in [0, 2π]
-    # This avoids piecewise jumps entirely.
+    # Lengths of segments
+    L1 = np.pi * R      # left semicircle
+    L2 = d              # top straight
+    L3 = np.pi * rho    # right semicircle
+    L4 = d              # bottom straight
+    total = L1 + L2 + L3 + L4
 
-    t_vals = np.linspace(0, 2*np.pi, steps)
+    s_vals = np.linspace(0, total, steps)
 
     data = []
 
-    for t in t_vals:
-        # Blend angle to move from left big arc to right small arc smoothly
-        # weight goes from 1 (left) to 0 (right) across half cycle
-        w = 0.5*(1 + np.cos(t))   # in [0,1]
+    for s in s_vals:
 
-        # radii for centerline (mid-lane approx)
-        rL = 48.0      # near center of [46,50]
-        rR = rho + 2.0 # ~22 (center-ish for right lobe)
+        if s < L1:
+            # LEFT semicircle (top -> bottom)
+            theta = np.pi/2 - s / R
+            x = A[0] + R * np.cos(theta)
+            y = A[1] + R * np.sin(theta)
 
-        # angles for arcs
-        thetaL = t
-        thetaR = t + np.pi  # opposite phase to create teardrop asymmetry
+            vx = -v * np.sin(theta)
+            vy =  v * np.cos(theta)
 
-        # points on each arc
-        pL = A + rL * np.array([np.cos(thetaL), np.sin(thetaL)])
-        pR = B + rR * np.array([np.cos(thetaR), np.sin(thetaR)])
+        elif s < L1 + L2:
+            # BOTTOM straight (left -> right)
+            s2 = s - L1
+            x = s2
+            y = -R
 
-        # smooth blend (guarantees continuity)
-        x, y = w * pL + (1 - w) * pR
+            vx = v
+            vy = 0
 
-        # approximate velocity via derivative of blend
-        # (good enough for EKF; keeps continuity)
-        dtheta = 2*np.pi / max(steps-1, 1)
-        # next t for finite difference
-        t2 = t + dtheta
-        w2 = 0.5*(1 + np.cos(t2))
-        thetaL2 = t2
-        thetaR2 = t2 + np.pi
-        pL2 = A + rL * np.array([np.cos(thetaL2), np.sin(thetaL2)])
-        pR2 = B + rR * np.array([np.cos(thetaR2), np.sin(thetaR2)])
-        x2, y2 = w2 * pL2 + (1 - w2) * pR2
+        elif s < L1 + L2 + L3:
+            # RIGHT semicircle (bottom -> top)
+            s3 = s - (L1 + L2)
+            theta = -np.pi/2 + s3 / rho
 
-        vx = (x2 - x) / dt
-        vy = (y2 - y) / dt
+            x = B[0] + rho * np.cos(theta)
+            y = B[1] + rho * np.sin(theta)
 
-        # normalize speed to ~v (keeps motion realistic)
-        speed = np.hypot(vx, vy) + 1e-9
-        vx = vx * (v / speed)
-        vy = vy * (v / speed)
+            vx = -v * np.sin(theta)
+            vy =  v * np.cos(theta)
+
+        else:
+            # TOP straight (right -> left)
+            s4 = s - (L1 + L2 + L3)
+            x = d - s4
+            y = R
+
+            vx = -v
+            vy = 0
 
         data.append([x, y, vx, vy])
 
