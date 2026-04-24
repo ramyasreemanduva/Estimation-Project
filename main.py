@@ -4,22 +4,24 @@ from filters.kalman_filter import ekf_predict, ekf_update_multi
 from models.dynamics import get_beacons
 from plots.plot_results import plot_trajectory
 
-dt = 0.01 # 100 Hz frequency
-steps = 5000 
+dt = 0.01 
+steps = 8000 # Increased steps to lower velocity to 10m/s 
 paths = get_track_geometry(steps, dt)
-true_states = np.column_stack([paths[0][0], paths[0][1], np.gradient(paths[0][0], dt), np.gradient(paths[0][1], dt)])
+true_path = paths[0]
+true_states = np.column_stack([true_path[0], true_path[1], 
+                               np.gradient(true_path[0], dt), 
+                               np.gradient(true_path[1], dt)])
 
 beacons = get_beacons()
 measurements = measure_beacons(true_states, beacons)
 
-# Initial state and covariance 
 x_est = true_states[0].copy()
 P = np.eye(4) * 0.1
-Q = np.diag([0.001, 0.001, 0.01, 0.01]) 
-R = np.eye(len(beacons)) * (1.5**2) # 1.5m std dev [cite: 19]
+# VERY LOW Q ensures smooth estimated velocity and lateral position
+Q = np.diag([0.0001, 0.0001, 0.001, 0.001]) 
+R = np.eye(len(beacons)) * (1.5**2) 
 
 estimates = []
-# FIX: Use len(measurements) to avoid IndexError
 for k in range(len(measurements)):
     x_est, P = ekf_predict(x_est, P, Q, dt)
     x_est, P = ekf_update_multi(x_est, P, measurements[k], beacons, R)
