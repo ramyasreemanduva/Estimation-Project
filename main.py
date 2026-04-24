@@ -3,7 +3,7 @@ from models.dynamics import get_beacons
 from filters.kalman_filter import ekf_predict, ekf_update_multi
 from simulation.simulator import get_track_geometry, measure_beacons
 from plots.plot_results import plot_trajectory
-from plots.plot_results import perform_analysis
+from plots.plot_results import plot_analysis
 
 # CONFIG
 dt, steps = 0.01, 1500
