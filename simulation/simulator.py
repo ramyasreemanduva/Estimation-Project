@@ -2,29 +2,21 @@ import numpy as np
 
 # SIMULATION
 
-import numpy as np
-
 def simulate_2D(steps, dt):
-
-    R = 50      # left big radius
-    rho = 20    # right small radius
-    d = 100
+    R = 50       # left radius
+    rho = 20     # right radius
+    d = 100      # center distance
     v = 10
 
     data = []
 
-    # centers
-    A = np.array([0, 0])        # left center
-    B = np.array([d, 0])        # right center
-
-    # arc lengths
-    L1 = np.pi * R
-    L2 = d
-    L3 = np.pi * rho
-    L4 = d
+    # segment lengths
+    L1 = np.pi * R          # left half circle
+    L2 = d                  # top straight
+    L3 = np.pi * rho        # right half circle
+    L4 = d                  # bottom straight
 
     total = L1 + L2 + L3 + L4
-
     s_vals = np.linspace(0, total, steps)
 
     for s in s_vals:
@@ -32,20 +24,16 @@ def simulate_2D(steps, dt):
         if s < L1:
             # LEFT ARC (top → bottom)
             theta = np.pi/2 - s / R
-
-            x = A[0] + R * np.cos(theta)
-            y = A[1] + R * np.sin(theta)
-
+            x = R * np.cos(theta)
+            y = R * np.sin(theta)
             vx = -v * np.sin(theta)
-            vy = v * np.cos(theta)
+            vy =  v * np.cos(theta)
 
         elif s < L1 + L2:
-            # BOTTOM STRAIGHT (left → right)
+            # BOTTOM STRAIGHT (connects smoothly)
             s2 = s - L1
-
-            x = A[0] + s2
+            x = s2
             y = -R
-
             vx = v
             vy = 0
 
@@ -53,20 +41,16 @@ def simulate_2D(steps, dt):
             # RIGHT ARC (bottom → top)
             s3 = s - (L1 + L2)
             theta = -np.pi/2 + s3 / rho
-
-            x = B[0] + rho * np.cos(theta)
-            y = B[1] + rho * np.sin(theta)
-
+            x = d + rho * np.cos(theta)
+            y = rho * np.sin(theta)
             vx = -v * np.sin(theta)
-            vy = v * np.cos(theta)
+            vy =  v * np.cos(theta)
 
         else:
-            # TOP STRAIGHT (right → left)
+            # TOP STRAIGHT (connects back to start)
             s4 = s - (L1 + L2 + L3)
-
-            x = B[0] - s4
+            x = d - s4
             y = R
-
             vx = -v
             vy = 0
 
