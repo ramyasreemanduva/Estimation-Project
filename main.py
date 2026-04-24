@@ -9,10 +9,10 @@ true_states, inner, outer = get_track_geometry(dt)
 beacons = get_beacons()
 measurements = measure_beacons(true_states, beacons)
 
-# EKF SETUP
-x_est = true_states[0].copy() # Match initial position exactly
+# Ensure the estimator starts exactly at the true initial position
+x_est = true_states[0].copy()
 P = np.eye(4) * 0.01 
-# Very low Q forces the filter to trust the smooth physics over noisy beacons
+# Q tuning: Very small Q enforces the smooth clockwise motion model
 Q = np.diag([1e-8, 1e-8, 1e-6, 1e-6]) 
 R = np.eye(len(beacons)) * (1.5**2) 
 
