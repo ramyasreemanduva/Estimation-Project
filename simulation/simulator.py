@@ -9,7 +9,7 @@ def get_track_geometry(dt=0.01):
     A = np.array([R_out, 0])
     B = np.array([R_out + d, 0])
     
-    # CRITICAL FIX: Lock the target velocity to exactly 10.0 m/s
+    # Locked target velocity for smooth physics
     v_target = 10.0 
     ds = v_target * dt
 
@@ -48,7 +48,20 @@ def get_track_geometry(dt=0.01):
             dist += ds
         return np.array(path)
 
-    return generate_continuous_path(R_mid, rho_mid)
+    # Re-added the missing boundary logic
+    def get_synced_bounds(Rv, rhov):
+        al_bound = np.arcsin((Rv - rhov) / d)
+        tl = np.linspace(0.5*np.pi + al_bound, 1.5*np.pi - al_bound, 100)
+        tr = np.linspace(1.5*np.pi - al_bound, 2.5*np.pi + al_bound, 100)
+        
+        x_l, y_l = A[0] + Rv*np.cos(tl), A[1] + Rv*np.sin(tl)
+        x_r, y_r = B[0] + rhov*np.cos(tr), B[1] + rhov*np.sin(tr)
+        
+        return np.concatenate([x_l, [x_r[0]], x_r, [x_l[0]]]), \
+               np.concatenate([y_l, [y_r[0]], y_r, [y_l[0]]])
+
+    # Now it correctly returns exactly 3 items for main.py to unpack
+    return generate_continuous_path(R_mid, rho_mid), get_synced_bounds(r_in, 18), get_synced_bounds(R_out, 22)
 
 def measure_beacons(states, beacons):
     return np.array([[np.sqrt((s[0]-b[0])**2 + (s[1]-b[1])**2) + np.random.normal(0, 1.5) for b in beacons] for s in states])
