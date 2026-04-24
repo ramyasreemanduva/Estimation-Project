@@ -8,7 +8,7 @@ from plots.plot_results import plot_trajectory
 # CONFIG 
 
 dt = 0.01
-steps = 2000
+steps = 1500
 
 
 # SIMULATION
@@ -20,7 +20,7 @@ measurements = measure_beacons(true_states, beacons)
 
 # INITIAL STATE
 
-x_est = np.array([48, 0, 0, 10])
+x_est = np.array([0, 50, 0, -10])
 P = np.eye(4)
 
 Q = np.diag([0.01, 0.01, 0.1, 0.1])
