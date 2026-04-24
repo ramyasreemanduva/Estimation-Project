@@ -1,55 +1,57 @@
 import numpy as np
 
+import numpy as np
+
 def get_track_geometry(dt=0.01):
-    # Parameters per project description: R=50, r=46, rho=20, d=100 [cite: 13, 14]
+    # Parameters for R=50, r=46 logic
     R_out, r_in, rho_mid, d = 50, 46, 20, 100
-    R_mid = (R_out + r_in) / 2 # Centerline 48m
+    R_mid = (R_out + r_in) / 2 # Centerline at 48m
     
-    # Calculate Tangent Angle (alpha) - Crucial for smooth connections
+    # Tangent Angle: alpha = arcsin((R-rho)/d)
     alpha = np.arcsin((R_mid - rho_mid) / d)
     
-    A = np.array([R_out, 0])  # Center of large arc
-    B = np.array([R_out + d, 0]) # Center of small arc
-    v_target = 10.0 # Approximately 10m/s 
+    A = np.array([R_out, 0])    # Center A [cite: 38]
+    B = np.array([R_out + d, 0]) # Center B [cite: 38]
+    v_target = 10.0 # Target velocity 
     ds = v_target * dt
 
-    def generate_full_path(R_val, rho_val):
-        # Calculate precise segment lengths
-        len_arc_A = (np.pi + 2*alpha) * R_val
-        len_arc_B = (np.pi - 2*alpha) * rho_val
-        len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
-        total_len = len_arc_A + len_arc_B + (2 * len_str)
+    # Exact segment lengths
+    len_arc_A = (np.pi + 2*alpha) * R_mid
+    len_arc_B = (np.pi - 2*alpha) * rho_mid
+    len_str = np.sqrt(d**2 - (R_mid - rho_mid)**2)
+    total_len = len_arc_A + len_arc_B + (2 * len_str)
+    
+    states = []
+    dist = 0
+    while dist < total_len:
+        if dist < len_arc_A: # Left Arc
+            theta = (np.pi/2 + alpha) + (dist / R_mid)
+            x, y = A[0] + R_mid * np.cos(theta), A[1] + R_mid * np.sin(theta)
+            vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
+        elif dist < (len_arc_A + len_str): # Bottom Straight
+            s = (dist - len_arc_A) / len_str
+            p1 = A + R_mid * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
+            p2 = B + rho_mid * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
+            pos = p1 + s * (p2 - p1)
+            vx, vy = v_target * np.cos(-alpha), v_target * np.sin(-alpha)
+            x, y = pos[0], pos[1]
+        elif dist < (len_arc_A + len_str + len_arc_B): # Right Arc
+            s_arc = dist - (len_arc_A + len_str)
+            theta = (1.5*np.pi - alpha) + (s_arc / rho_mid)
+            x, y = B[0] + rho_mid * np.cos(theta), B[1] + rho_mid * np.sin(theta)
+            vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
+        else: # Top Straight
+            s = (dist - (len_arc_A + len_str + len_arc_B)) / len_str
+            p1 = B + rho_mid * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
+            p2 = A + R_mid * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
+            pos = p1 + s * (p2 - p1)
+            vx, vy = -v_target * np.cos(alpha), -v_target * np.sin(alpha)
+            x, y = pos[0], pos[1]
+            
+        states.append([x, y, vx, vy])
+        dist += ds
         
-        path = []
-        dist = 0
-        while dist < total_len:
-            if dist < len_arc_A: # Segment 1: Left Arc (A)
-                theta = (np.pi/2 + alpha) + (dist / R_val)
-                x, y = A[0] + R_val * np.cos(theta), A[1] + R_val * np.sin(theta)
-                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            elif dist < (len_arc_A + len_str): # Segment 2: Bottom Straight
-                s = (dist - len_arc_A) / len_str
-                p1 = A + R_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
-                p2 = B + rho_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
-                pos = p1 + s * (p2 - p1)
-                vx, vy = v_target * np.cos(-alpha), v_target * np.sin(-alpha)
-                x, y = pos[0], pos[1]
-            elif dist < (len_arc_A + len_str + len_arc_B): # Segment 3: Right Arc (B)
-                s_arc = dist - (len_arc_A + len_str)
-                theta = (1.5*np.pi - alpha) + (s_arc / rho_val)
-                x, y = B[0] + rho_val * np.cos(theta), B[1] + rho_val * np.sin(theta)
-                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            else: # Segment 4: Top Straight
-                s = (dist - (len_arc_A + len_str + len_arc_B)) / len_str
-                p1 = B + rho_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
-                p2 = A + R_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
-                pos = p1 + s * (p2 - p1)
-                vx, vy = -v_target * np.cos(alpha), -v_target * np.sin(alpha)
-                x, y = pos[0], pos[1]
-            path.append([x, y, vx, vy])
-            dist += ds
-        return np.array(path)
-
+    return np.array(states)
     # Static boundaries for plotting Figure 1 [cite: 18]
     def get_bounds(R_v, rho_v):
         t_l = np.linspace(0.5*np.pi + alpha, 1.5*np.pi - alpha, 100)
