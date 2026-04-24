@@ -1,20 +1,6 @@
 import numpy as np
 
-# Circular Motion 
-
-def circular_motion(theta, R):
-    x = R * np.cos(theta)
-    y = R * np.sin(theta)
-    return x, y
-
-# Circular Velocity 
-
-def circular_velocity(theta, omega, R):
-    vx = -R * omega * np.sin(theta)
-    vy = R * omega * np.cos(theta)
-    return vx, vy
-
-# State Transition 
+# State Transition
 
 def F_2D(dt):
     return np.array([
@@ -25,36 +11,38 @@ def F_2D(dt):
     ])
 
 
-# Lane Constraint
-
-def apply_constraints(y):
-    return np.clip(y, -2, 2)
-
-# NEW: Beacons 
+# Beacons (outside track)
 
 def get_beacons():
     return np.array([
-        [-20, 10],
-        [50, -10],
-        [120, 15]
+        [-80, 0],
+        [80, 0],
+        [0, 80],
+        [0, -80]
     ])
 
 
-# Nonlinear Measurement Function
+# Lane Constraint
 
-def h(x, beacon):
-    dx = x[0] - beacon[0]
-    dy = x[1] - beacon[1]
-    return np.array([np.sqrt(dx**2 + dy**2)])
+def apply_track_constraint(x, y):
+    r = np.sqrt(x**2 + y**2)
 
-# Jacobian of Measurement
+    # keep inside [46, 50]
+    r = np.clip(r, 46, 50)
+
+    angle = np.arctan2(y, x)
+
+    x_new = r * np.cos(angle)
+    y_new = r * np.sin(angle)
+
+    return x_new, y_new
+
+# Jacobian for EKF
 
 def H_jacobian(x, beacon):
     dx = x[0] - beacon[0]
     dy = x[1] - beacon[1]
 
-    r = np.sqrt(dx**2 + dy**2)
+    r = np.sqrt(dx**2 + dy**2) + 1e-6
 
-    return np.array([
-        [dx/r, dy/r, 0, 0]
-    ])
+    return np.array([[dx/r, dy/r, 0, 0]])
