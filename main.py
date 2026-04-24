@@ -1,48 +1,52 @@
 import numpy as np
 
-from models.dynamics import F_2D, apply_constraints
-from filters.kalman_filter import kf_step
-from simulation.simulator import simulate_2D, measure_2D
+from models.dynamics import get_beacons
+from filters.kalman_filter import ekf_predict, ekf_update
+from simulation.simulator import simulate_2D, measure_beacons
 from plots.plot_results import plot_trajectory
 
 # CONFIG
+
 dt = 0.1
-steps = 200
+steps = 100
 
 # SIMULATION
+
 true_states = simulate_2D(steps, dt)
-measurements = measure_2D(true_states)
-
-# MODEL
-A = F_2D(dt)
-
-H = np.array([
-    [1, 0, 0, 0],
-    [0, 1, 0, 0]
-])
-
-Q = np.eye(4) * 0.1
-R_mat = np.eye(2) * (1.5**2)
+beacons = get_beacons()
+measurements = measure_beacons(true_states, beacons)
 
 # INITIAL STATE
-x_est = np.array([0, 0, 8, 0])
+
+x_est = np.array([0, 0, 8, 0])  # initial guess
 P = np.eye(4)
+
+Q = np.eye(4) * 0.1
+R = np.array([[1.5**2]])
 
 estimates = []
 
-# RUN KF
-for k in range(steps):
-    x_est, P = kf_step(x_est, P, measurements[k], A, H, Q, R_mat)
+# RUN EKF
 
-    # Apply constraint to estimate
-    x_est[1] = apply_constraints(x_est[1])
+for k in range(steps):
+
+    # Prediction
+    x_est, P = ekf_predict(x_est, P, Q, dt)
+
+    # Update using all beacons
+    for i, beacon in enumerate(beacons):
+        z = measurements[k][i]
+        x_est, P = ekf_update(x_est, P, z, beacon, R)
 
     estimates.append(x_est.copy())
 
 estimates = np.array(estimates)
 
+
 # OUTPUT
+
 print("Final estimated state:", x_est)
 
 # PLOT
+
 plot_trajectory(true_states, estimates)
