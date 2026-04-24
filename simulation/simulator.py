@@ -1,15 +1,11 @@
 import numpy as np
 
 def get_track_geometry(dt=0.01):
-    # Parameters: R=50, r=46 (4m lane), rho=20, d=100
     R_out, r_in, rho_mid, d = 50, 46, 20, 100
     R_mid = (R_out + r_in) / 2 
-    
-    # Tangent Angle alpha ensures smooth connection between arcs and straights
     alpha = np.arcsin((R_mid - rho_mid) / d)
     
-    A = np.array([R_out, 0])
-    B = np.array([R_out + d, 0])
+    A, B = np.array([R_out, 0]), np.array([R_out + d, 0])
     v_target = 10.0 
     ds = v_target * dt
 
@@ -47,16 +43,13 @@ def get_track_geometry(dt=0.01):
             dist += ds
         return np.array(path)
 
-    # Static boundaries for Figure 1 plotting
-    def get_static_bounds(R_v, rho_v):
+    def get_bounds(Rv, rhov):
         tl = np.linspace(0.5*np.pi + alpha, 1.5*np.pi - alpha, 100)
         tr = np.linspace(1.5*np.pi - alpha, 2.5*np.pi + alpha, 100)
-        return np.concatenate([A[0]+R_v*np.cos(tl), B[0]+rho_v*np.cos(tr)]), \
-               np.concatenate([A[1]+R_v*np.sin(tl), B[1]+rho_v*np.sin(tr)])
+        return np.concatenate([A[0]+Rv*np.cos(tl), B[0]+rhov*np.cos(tr)]), \
+               np.concatenate([A[1]+Rv*np.sin(tl), B[1]+rhov*np.sin(tr)])
 
-    return generate_path(R_mid, rho_mid), get_static_bounds(r_in, 18), get_static_bounds(R_out, 22)
+    return generate_path(R_mid, rho_mid), get_bounds(r_in, 18), get_bounds(R_out, 22)
 
-# THE MISSING FUNCTION
 def measure_beacons(states, beacons):
-    """Simulates range measurements with 1.5m noise."""
     return np.array([[np.sqrt((s[0]-b[0])**2 + (s[1]-b[1])**2) + np.random.normal(0, 1.5) for b in beacons] for s in states])
