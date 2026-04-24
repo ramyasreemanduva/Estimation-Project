@@ -16,8 +16,8 @@ def plot_trajectory(true_states, estimates, beacons, inner, outer):
     # Calculate yt as distance from current estimate to center of lane
     yt = [np.min(np.sqrt((true_states[:,0]-e[0])**2 + (true_states[:,1]-e[1])**2)) for e in estimates]
     plt.figure(figsize=(10, 4))
-    plt.plot(time, yt, 'k', label='Lateral position, $y_t$') [cite: 60]
-    plt.axhline(y=2, color='r', linestyle='--', label='Bound (2m)') [cite: 14, 63]
+    plt.plot(time, yt, 'k', label='Lateral position, $y_t$')
+    plt.axhline(y=2, color='r', linestyle='--', label='Bound (2m)') 
     plt.ylim(-0.5, 3); plt.grid(True); plt.ylabel("Lateral position, $y_t$ (m)"); plt.xlabel("Time (s)") [cite: 60, 69]
 
     # Figure 3: Velocity Constraint Validation 
