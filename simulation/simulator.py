@@ -1,13 +1,13 @@
 import numpy as np
 
 def get_track_geometry(steps, dt=0.01):
-    # Parameters for R=50, r=46 [cite: 13]
+    
     R_out, r_in, rho, d = 50, 46, 20, 100
-    R_mid = (R_out + r_in) / 2 # Centerline [cite: 17]
+    R_mid = (R_out + r_in) / 2 # Centerline (48m)
     center_a, center_b = np.array([50, 0]), np.array([150, 0])
 
     def gen_path(R, r_s, n_steps):
-        # Generates a clockwise path 
+        # Clockwise segments 
         t_r = np.linspace(np.pi/2, -np.pi/2, n_steps // 3)
         x_r, y_r = center_b[0] + r_s * np.cos(t_r), center_b[1] + r_s * np.sin(t_r)
         
@@ -25,5 +25,5 @@ def get_track_geometry(steps, dt=0.01):
     return gen_path(R_mid, rho, steps), gen_path(r_in, rho-2, steps), gen_path(R_out, rho+2, steps)
 
 def measure_beacons(states, beacons):
-    # Standard deviation of 1.5m [cite: 19, 23]
+    # Standard deviation 1.5m 
     return np.array([[np.sqrt((s[0]-b[0])**2 + (s[1]-b[1])**2) + np.random.normal(0, 1.5) for b in beacons] for s in states])
