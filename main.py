@@ -18,7 +18,8 @@ P = np.eye(4) * 0.01
 
 # Tuning Parameters: 
 # Low Q forces the filter to trust the constant 10m/s physics model over noisy sensors
-Q = np.diag([1e-8, 1e-8, 1e-6, 1e-6]) 
+# Allow more uncertainty so the filter listens to the beacons during turns
+Q = np.diag([0.1, 0.1, 2.0, 2.0])
 # R uses the 1.5m standard deviation provided in the project specs
 R = np.eye(len(beacons)) * (1.5**2) 
 
