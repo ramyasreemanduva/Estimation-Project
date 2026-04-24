@@ -14,3 +14,4 @@ def plot_trajectory(true, est):
     plt.grid()
 
     plt.show()
+    plt.axis("equal")
