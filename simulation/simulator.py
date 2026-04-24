@@ -2,24 +2,37 @@ import numpy as np
 
 # SIMULATION
 
+import numpy as np
+
 def simulate_2D(steps, dt):
-    # Track parameters
-    R = 50.0      # left (big) radius
-    rho = 20.0    # right (small) radius
-    d = 100.0     # distance between arc centers
+    R = 50.0
+    rho = 20.0
+    d = 100.0
     v = 10.0
 
-    # Centers
-    A = np.array([0.0, 0.0])   # left center
-    B = np.array([d, 0.0])     # right center
+    A = np.array([0.0, 0.0])
+    B = np.array([d, 0.0])
 
-    # Lengths of segments
-    L1 = np.pi * R      # left semicircle
-    L2 = d              # top straight
-    L3 = np.pi * rho    # right semicircle
-    L4 = d              # bottom straight
+    # --- Compute common external tangent angle ---
+    # sin(alpha) = (R - rho) / d
+    alpha = np.arcsin((R - rho) / d)  # slope angle of the straight
+
+    # Tangent points on left circle (A) and right circle (B)
+    # Top tangent points
+    TL = A + R * np.array([ np.sin(alpha),  np.cos(alpha)])
+    TR = B + rho * np.array([ np.sin(alpha),  np.cos(alpha)])
+
+    # Bottom tangent points
+    BL = A + R * np.array([-np.sin(alpha), -np.cos(alpha)])
+    BR = B + rho * np.array([-np.sin(alpha), -np.cos(alpha)])
+
+    # Segment lengths
+    L1 = np.pi * R          # left arc
+    L2 = np.linalg.norm(TR - TL)  # top straight
+    L3 = np.pi * rho        # right arc
+    L4 = np.linalg.norm(BL - BR)  # bottom straight
+
     total = L1 + L2 + L3 + L4
-
     s_vals = np.linspace(0, total, steps)
 
     data = []
@@ -27,8 +40,10 @@ def simulate_2D(steps, dt):
     for s in s_vals:
 
         if s < L1:
-            # LEFT semicircle (top -> bottom)
-            theta = np.pi/2 - s / R
+            # LEFT ARC: from TL -> BL (clockwise)
+            theta0 = np.arctan2(TL[1]-A[1], TL[0]-A[0])
+            theta = theta0 - s / R
+
             x = A[0] + R * np.cos(theta)
             y = A[1] + R * np.sin(theta)
 
@@ -36,18 +51,18 @@ def simulate_2D(steps, dt):
             vy =  v * np.cos(theta)
 
         elif s < L1 + L2:
-            # BOTTOM straight (left -> right)
-            s2 = s - L1
-            x = s2
-            y = -R
+            # TOP STRAIGHT: TL -> TR
+            s2 = (s - L1) / L2
+            pos = TL + s2 * (TR - TL)
 
-            vx = v
-            vy = 0
+            x, y = pos
+            dir_vec = (TR - TL) / L2
+            vx, vy = v * dir_vec
 
         elif s < L1 + L2 + L3:
-            # RIGHT semicircle (bottom -> top)
-            s3 = s - (L1 + L2)
-            theta = -np.pi/2 + s3 / rho
+            # RIGHT ARC: TR -> BR (clockwise)
+            theta0 = np.arctan2(TR[1]-B[1], TR[0]-B[0])
+            theta = theta0 - (s - (L1 + L2)) / rho
 
             x = B[0] + rho * np.cos(theta)
             y = B[1] + rho * np.sin(theta)
@@ -56,13 +71,13 @@ def simulate_2D(steps, dt):
             vy =  v * np.cos(theta)
 
         else:
-            # TOP straight (right -> left)
-            s4 = s - (L1 + L2 + L3)
-            x = d - s4
-            y = R
+            # BOTTOM STRAIGHT: BR -> BL
+            s4 = (s - (L1 + L2 + L3)) / L4
+            pos = BR + s4 * (BL - BR)
 
-            vx = -v
-            vy = 0
+            x, y = pos
+            dir_vec = (BL - BR) / L4
+            vx, vy = v * dir_vec
 
         data.append([x, y, vx, vy])
 
