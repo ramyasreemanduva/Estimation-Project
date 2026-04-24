@@ -2,8 +2,6 @@ import numpy as np
 
 # SIMULATION
 
-import numpy as np
-
 def simulate_2D(steps, dt):
     R = 50.0
     rho = 20.0
