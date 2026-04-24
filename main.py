@@ -8,7 +8,7 @@ from plots.plot_results import plot_trajectory
 # CONFIG 
 
 dt = 0.01
-steps = 1000
+steps = 2000
 
 
 # SIMULATION
