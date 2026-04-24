@@ -15,10 +15,9 @@ def F_2D(dt):
 
 def get_beacons():
     return np.array([
-        [-80, 0],
-        [80, 0],
-        [0, 80],
-        [0, -80]
+        [-30, -60],   # b1 (bottom-left)
+        [-30,  60],   # b2 (top-left)
+        [140, -10]    # b3 (right side)
     ])
 
 
