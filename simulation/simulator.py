@@ -1,61 +1,70 @@
 import numpy as np
 
-def get_track_geometry(dt=0.01):
-    # ELE8101 Parameters: R=50, r=46, rho=20, d=100
-    R_out, r_in, rho_mid, d = 50, 46, 20, 100
-    R_mid = (R_out + r_in) / 2 # Centerline 48m
+# TRUE TRACK
+def simulate_2D(steps, dt):
+    # Constants based on diagram
+    R = 50      # Large radius
+    rho = 20    # Small radius
+    d = 100     # Distance between centers A and B
     
-    # Calculate Tangent Angle (alpha)
-    # This aligns the straight lines to the circular arcs
-    alpha = np.arcsin((R_mid - rho_mid) / d)
-    
-    A = np.array([R_out, 0])      # Center of large arc
-    B = np.array([R_out + d, 0])   # Center of small arc
-    v_target = 10.0 # m/s
-    ds = v_target * dt
+    # To match the first image, we need the path to start at (0, 50)
+    # The center of the left circle is at (50, 0)
+    center_a = np.array([50, 0])
+    center_b = np.array([50 + d, 0])
 
-    def generate_path(R_val, rho_val):
-        # Precise segment lengths
-        len_arc_A = (np.pi + 2*alpha) * R_val
-        len_arc_B = (np.pi - 2*alpha) * rho_val
-        len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
-        total_len = len_arc_A + len_arc_B + (2 * len_str)
-        
-        path = []
-        dist = 0
-        while dist < total_len:
-            if dist < len_arc_A: # Segment 1: Left Arc
-                theta = (np.pi/2 + alpha) + (dist / R_val)
-                x, y = A[0] + R_val * np.cos(theta), A[1] + R_val * np.sin(theta)
-                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            elif dist < (len_arc_A + len_str): # Segment 2: Bottom Straight
-                s = (dist - len_arc_A) / len_str
-                p1 = A + R_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
-                p2 = B + rho_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
-                pos = p1 + s * (p2 - p1)
-                x, y, vx, vy = pos[0], pos[1], v_target * np.cos(-alpha), v_target * np.sin(-alpha)
-            elif dist < (len_arc_A + len_str + len_arc_B): # Segment 3: Right Arc
-                s_arc = dist - (len_arc_A + len_str)
-                theta = (1.5*np.pi - alpha) + (s_arc / rho_val)
-                x, y = B[0] + rho_val * np.cos(theta), B[1] + rho_val * np.sin(theta)
-                vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            else: # Segment 4: Top Straight
-                s = (dist - (len_arc_A + len_str + len_arc_B)) / len_str
-                p1 = B + rho_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
-                p2 = A + R_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
-                pos = p1 + s * (p2 - p1)
-                x, y, vx, vy = pos[0], pos[1], -v_target * np.cos(alpha), -v_target * np.sin(alpha)
-            path.append([x, y, vx, vy])
-            dist += ds
-        return np.array(path)
+    # Angle where the tangent lines touch the circles
+    # sin(alpha) = (R - rho) / d
+    alpha = np.arcsin((R - rho) / d)
 
-    def get_static_bounds(Rv, rhov):
-        tl = np.linspace(0.5*np.pi + alpha, 1.5*np.pi - alpha, 100)
-        tr = np.linspace(1.5*np.pi - alpha, 2.5*np.pi + alpha, 100)
-        return np.concatenate([A[0]+Rv*np.cos(tl), B[0]+rhov*np.cos(tr)]), \
-               np.concatenate([A[1]+Rv*np.sin(tl), B[1]+rhov*np.sin(tr)])
+    # ---------- LEFT ARC (Outer curve) ----------
+    # Sweeps from top tangent point to the far left, then to bottom tangent
+    theta_left = np.linspace(np.pi/2 + alpha, 1.5*np.pi - alpha, steps//3)
+    x_left = center_a[0] + R * np.cos(theta_left)
+    y_left = center_a[1] + R * np.sin(theta_left)
 
-    return generate_path(R_mid, rho_mid), get_static_bounds(r_in, 18), get_static_bounds(R_out, 22)
+    # ---------- RIGHT ARC (Small curve) ----------
+    # Sweeps around the tip on the right
+    theta_right = np.linspace(-np.pi/2 + alpha, np.pi/2 - alpha, steps//3)
+    x_right = center_b[0] + rho * np.cos(theta_right)
+    y_right = center_b[1] + rho * np.sin(theta_right)
 
+    # ---------- CONNECTING STRAIGHTS ----------
+    # Bottom straight (end of left arc to start of right arc)
+    x_bottom = np.linspace(x_left[-1], x_right[0], steps//6)
+    y_bottom = np.linspace(y_left[-1], y_right[0], steps//6)
+
+    # Top straight (end of right arc to start of left arc)
+    x_top = np.linspace(x_right[-1], x_left[0], steps//6)
+    y_top = np.linspace(y_right[-1], y_left[0], steps//6)
+
+    # ---------- COMBINE ----------
+    x = np.concatenate([x_left, x_bottom, x_right, x_top])
+    y = np.concatenate([y_left, y_bottom, y_right, y_top])
+
+    # ---------- VELOCITY ----------
+    vx = np.gradient(x, dt)
+    vy = np.gradient(y, dt)
+
+    return np.column_stack([x, y, vx, vy])
+
+# MEASUREMENTS
 def measure_beacons(states, beacons):
-    return np.array([[np.sqrt((s[0]-b[0])**2 + (s[1]-b[1])**2) + np.random.normal(0, 1.5) for b in beacons] for s in states])
+    measurements = []
+    # Using the beacon positions from the diagram (approximate based on red dots)
+    # b1 is bottom left, b2 is top left, b3 is bottom right
+    for state in states:
+        z = []
+        for bx, by in beacons:
+            dist = np.sqrt((state[0] - bx)**2 + (state[1] - by)**2)
+            # Adding noise as per EKF requirements
+            z.append(dist + np.random.normal(0, 1.5))
+        measurements.append(z)
+
+    return np.array(measurements)
+
+# Example Beacon Setup based on your second image
+# beacons = np.array([
+#    [0, -50], # b1
+#    [0, 50],  # b2
+#    [140, -40] # b3
+# ])
