@@ -1,7 +1,7 @@
 import numpy as np
 
 def get_track_geometry(steps, dt=0.01):
-    # Parameters requested by user
+    # Parameters 
     R_outer = 50   # Outer boundary
     r_inner = 46   # Inner boundary
     rho_mid = 20   # Center of the small arc [cite: 13]
