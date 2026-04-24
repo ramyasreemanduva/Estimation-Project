@@ -4,14 +4,14 @@ from filters.kalman_filter import ekf_predict, ekf_update_multi
 from models.dynamics import get_beacons
 from plots.plot_results import plot_trajectory
 
-dt = 0.01 
+dt = 0.01 # 100 Hz [cite: 20]
 true_states, inner, outer = get_track_geometry(dt)
-beacons = get_beacons()
+beacons = get_beacons() # Outside lane region [cite: 18]
 measurements = measure_beacons(true_states, beacons)
 
 x_est = true_states[0].copy()
 P = np.eye(4) * 0.1
-Q = np.diag([1e-7, 1e-7, 1e-5, 1e-5]) # Extremely low Q for perfect tracking
+Q = np.diag([1e-7, 1e-7, 1e-5, 1e-5]) 
 R = np.eye(len(beacons)) * (1.5**2) 
 
 estimates = []
