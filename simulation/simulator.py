@@ -3,68 +3,64 @@ import numpy as np
 # SIMULATION
 
 def simulate_2D(steps, dt):
+    # Given
+    R = 50.0     # outer left radius
+    rho = 20.0   # right tight radius
+    d = 100.0    # distance A->B
+    v = 10.0
 
-    R = 50
-    rho = 20
-    d = 100
-    v = 10
+    # Centers
+    A = np.array([0.0, 0.0])
+    B = np.array([d, 0.0])
+
+    # We build a smooth centerline by blending:
+    # left big arc (around A, radius ~ R-2)  +  right small arc (around B, radius ~ rho+2)
+    # and connect them with *tangent* lines using a parameter t in [0, 2π]
+    # This avoids piecewise jumps entirely.
+
+    t_vals = np.linspace(0, 2*np.pi, steps)
 
     data = []
 
-    # angle of straight segments (approx from diagram)
-    alpha = np.deg2rad(20)
+    for t in t_vals:
+        # Blend angle to move from left big arc to right small arc smoothly
+        # weight goes from 1 (left) to 0 (right) across half cycle
+        w = 0.5*(1 + np.cos(t))   # in [0,1]
 
-    # segment lengths
-    L1 = np.pi * R
-    L2 = d
-    L3 = np.pi * rho
-    L4 = d
+        # radii for centerline (mid-lane approx)
+        rL = 48.0      # near center of [46,50]
+        rR = rho + 2.0 # ~22 (center-ish for right lobe)
 
-    total = L1 + L2 + L3 + L4
-    s_vals = np.linspace(0, total, steps)
+        # angles for arcs
+        thetaL = t
+        thetaR = t + np.pi  # opposite phase to create teardrop asymmetry
 
-    for s in s_vals:
+        # points on each arc
+        pL = A + rL * np.array([np.cos(thetaL), np.sin(thetaL)])
+        pR = B + rR * np.array([np.cos(thetaR), np.sin(thetaR)])
 
-        if s < L1:
-            # LEFT ARC
-            theta = np.pi/2 - s / R
-            x = R * np.cos(theta)
-            y = R * np.sin(theta)
+        # smooth blend (guarantees continuity)
+        x, y = w * pL + (1 - w) * pR
 
-            vx = -v * np.sin(theta)
-            vy =  v * np.cos(theta)
+        # approximate velocity via derivative of blend
+        # (good enough for EKF; keeps continuity)
+        dtheta = 2*np.pi / max(steps-1, 1)
+        # next t for finite difference
+        t2 = t + dtheta
+        w2 = 0.5*(1 + np.cos(t2))
+        thetaL2 = t2
+        thetaR2 = t2 + np.pi
+        pL2 = A + rL * np.array([np.cos(thetaL2), np.sin(thetaL2)])
+        pR2 = B + rR * np.array([np.cos(thetaR2), np.sin(thetaR2)])
+        x2, y2 = w2 * pL2 + (1 - w2) * pR2
 
-        elif s < L1 + L2:
-            # TOP SLOPED STRAIGHT
-            s2 = s - L1
-            x = R + s2 * np.cos(alpha)
-            y = s2 * np.sin(alpha)
+        vx = (x2 - x) / dt
+        vy = (y2 - y) / dt
 
-            vx = v * np.cos(alpha)
-            vy = v * np.sin(alpha)
-
-        elif s < L1 + L2 + L3:
-            # RIGHT ARC (shifted correctly)
-            s3 = s - (L1 + L2)
-            theta = np.pi/2 - s3 / rho
-
-            cx = d
-            cy = rho * np.sin(alpha)
-
-            x = cx + rho * np.cos(theta)
-            y = cy + rho * np.sin(theta)
-
-            vx = -v * np.sin(theta)
-            vy =  v * np.cos(theta)
-
-        else:
-            # BOTTOM SLOPED STRAIGHT
-            s4 = s - (L1 + L2 + L3)
-            x = d - s4 * np.cos(alpha)
-            y = -s4 * np.sin(alpha)
-
-            vx = -v * np.cos(alpha)
-            vy = -v * np.sin(alpha)
+        # normalize speed to ~v (keeps motion realistic)
+        speed = np.hypot(vx, vy) + 1e-9
+        vx = vx * (v / speed)
+        vy = vy * (v / speed)
 
         data.append([x, y, vx, vy])
 
