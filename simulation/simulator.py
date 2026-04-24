@@ -1,15 +1,21 @@
 import numpy as np
 
 def get_track_geometry(dt=0.01):
+    # Project Parameters: R=50, r=46, rho=20, d=100
     R_out, r_in, rho_mid, d = 50, 46, 20, 100
-    R_mid = (R_out + r_in) / 2 
+    R_mid = (R_out + r_in) / 2 # Centerline 48m
+    
+    # Tangent Angle: alpha = arcsin((R_mid - rho_mid) / d)
+    # This angle is where the straight line leaves the circle
     alpha = np.arcsin((R_mid - rho_mid) / d)
     
-    A, B = np.array([R_out, 0]), np.array([R_out + d, 0])
-    v_target = 10.0 
+    A = np.array([R_out, 0])    # Center of left arc
+    B = np.array([R_out + d, 0]) # Center of right arc
+    v_target = 10.0 # Target speed
     ds = v_target * dt
 
     def generate_path(R_val, rho_val):
+        # Calculate precise segment lengths
         len_arc_A = (np.pi + 2*alpha) * R_val
         len_arc_B = (np.pi - 2*alpha) * rho_val
         len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
@@ -18,22 +24,22 @@ def get_track_geometry(dt=0.01):
         path = []
         dist = 0
         while dist < total_len:
-            if dist < len_arc_A:
+            if dist < len_arc_A: # Left Circular Arc
                 theta = (np.pi/2 + alpha) + (dist / R_val)
                 x, y = A[0] + R_val * np.cos(theta), A[1] + R_val * np.sin(theta)
                 vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            elif dist < (len_arc_A + len_str):
+            elif dist < (len_arc_A + len_str): # Bottom Tangent Straight
                 s = (dist - len_arc_A) / len_str
                 p1 = A + R_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
                 p2 = B + rho_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
                 pos = p1 + s * (p2 - p1)
                 x, y, vx, vy = pos[0], pos[1], v_target * np.cos(-alpha), v_target * np.sin(-alpha)
-            elif dist < (len_arc_A + len_str + len_arc_B):
+            elif dist < (len_arc_A + len_str + len_arc_B): # Right Circular Arc
                 s_arc = dist - (len_arc_A + len_str)
                 theta = (1.5*np.pi - alpha) + (s_arc / rho_val)
                 x, y = B[0] + rho_val * np.cos(theta), B[1] + rho_val * np.sin(theta)
                 vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            else:
+            else: # Top Tangent Straight
                 s = (dist - (len_arc_A + len_str + len_arc_B)) / len_str
                 p1 = B + rho_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
                 p2 = A + R_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
@@ -43,6 +49,7 @@ def get_track_geometry(dt=0.01):
             dist += ds
         return np.array(path)
 
+    # Static boundaries for visualization
     def get_bounds(Rv, rhov):
         tl = np.linspace(0.5*np.pi + alpha, 1.5*np.pi - alpha, 100)
         tr = np.linspace(1.5*np.pi - alpha, 2.5*np.pi + alpha, 100)
