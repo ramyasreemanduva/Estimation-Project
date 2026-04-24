@@ -1,18 +1,18 @@
 import numpy as np
-from simulation.simulator import get_track_geometry, measure_beacons
-from filters.kalman_filter import ekf_predict, ekf_update_multi
-from models.dynamics import get_beacons
-from plots.plot_results import plot_trajectory
+from simulation.simulator import get_track_geometry
+# ... other imports ...
 
 dt = 0.01 # 100 Hz [cite: 20]
 true_states, inner, outer = get_track_geometry(dt)
-beacons = get_beacons() # Outside lane region [cite: 18]
-measurements = measure_beacons(true_states, beacons)
 
+# Initial State must match first true state exactly to prevent spiraling [cite: 41, 47]
 x_est = true_states[0].copy()
-P = np.eye(4) * 0.1
-Q = np.diag([1e-7, 1e-7, 1e-5, 1e-5]) 
-R = np.eye(len(beacons)) * (1.5**2) 
+P = np.eye(4) * 0.01 
+
+# Process Noise Q: Keep very small to enforce track constraints [cite: 87, 88]
+Q = np.diag([1e-8, 1e-8, 1e-6, 1e-6]) 
+# R Variance: based on 1.5m standard deviation [cite: 19]
+R = np.eye(3) * (1.5**2) 
 
 estimates = []
 for k in range(len(measurements)):
