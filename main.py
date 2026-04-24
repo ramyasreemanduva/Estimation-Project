@@ -32,5 +32,11 @@ for k in range(len(true_states)):
     x_est, P = ekf_predict(x_est, P, Q, dt)
     x_est, P = ekf_update_multi(x_est, P, measurements[k], beacons, R)
     estimates.append(x_est.copy())
+    from plots.analysis import perform_analysis
+    long_rmse, lat_rmse = perform_analysis(true_states, estimates, dt)
+
+print(f"Project Validation:")
+print(f"Longitudinal RMSE: {long_rmse:.4f} m/s")
+print(f"Lateral RMSE: {lat_rmse:.4f} m")
 
 plot_trajectory(true_states, np.array(estimates), beacons, inner_bound, outer_bound)
