@@ -2,6 +2,8 @@ import numpy as np
 
 # SIMULATION
 
+import numpy as np
+
 def simulate_2D(steps, dt):
 
     R = 50.0
@@ -12,7 +14,7 @@ def simulate_2D(steps, dt):
     A = np.array([0.0, 0.0])
     B = np.array([d, 0.0])
 
-    # -------- Tangent angle --------
+    # -------- Correct tangent angle --------
     alpha = np.arcsin((R - rho) / d)
 
     # -------- Tangent points --------
@@ -26,7 +28,7 @@ def simulate_2D(steps, dt):
     L1 = np.pi * R
     L2 = np.linalg.norm(TR - TL)
     L3 = np.pi * rho
-    L4 = np.linalg.norm(BL - BR)
+    L4 = np.linalg.norm(BR - BL)
 
     total = L1 + L2 + L3 + L4
     s_vals = np.linspace(0, total, steps)
@@ -46,7 +48,7 @@ def simulate_2D(steps, dt):
             vx = -v * np.sin(theta)
             vy =  v * np.cos(theta)
 
-        # ---------- TOP STRAIGHT ----------
+        # ---------- TOP SLOPED STRAIGHT ----------
         elif s < L1 + L2:
             s2 = (s - L1) / L2
             pos = TL + s2 * (TR - TL)
@@ -67,7 +69,7 @@ def simulate_2D(steps, dt):
             vx = -v * np.sin(theta)
             vy =  v * np.cos(theta)
 
-        # ---------- BOTTOM STRAIGHT ----------
+        # ---------- BOTTOM SLOPED STRAIGHT ----------
         else:
             s4 = (s - (L1 + L2 + L3)) / L4
             pos = BR + s4 * (BL - BR)
@@ -80,6 +82,8 @@ def simulate_2D(steps, dt):
         data.append([x, y, vx, vy])
 
     return np.array(data)
+
+
 # MEASUREMENTS 
 
 def measure_beacons(states, beacons):
