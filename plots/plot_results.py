@@ -24,9 +24,10 @@ def plot_analysis(true_states, estimates, beacons, inner, outer, dt=0.01):
     # --- 2. Plotting ---
     # FIGURE 1: 2D Track Mapping
     plt.figure(figsize=(10, 6))
-    plt.plot(inner[0], inner[1], 'k', alpha=0.2, label='Lane Bounds')
-    plt.plot(outer[0], outer[1], 'k', alpha=0.2)
-    plt.plot(true_states[:,0], true_states[:,1], 'b-', alpha=0.4, label='True Path')
+# FIGURE 1: 2D Track Mapping
+    plt.figure(figsize=(10, 6))
+    plt.plot(inner[0], inner[1], 'k', alpha=0.8, linewidth=1.5)
+    plt.plot(outer[0], outer[1], 'k', alpha=0.8, linewidth=1.5)
     plt.plot(estimates[:,0], estimates[:,1], 'r--', label='EKF Estimate')
     plt.scatter(beacons[:,0], beacons[:,1], c='red', label='Beacons')
     plt.axis('equal')
