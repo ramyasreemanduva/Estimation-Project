@@ -25,10 +25,6 @@ def plot_analysis(true_states, estimates, beacons, inner, outer, dt=0.01):
     # FIGURE 1: 2D Track Mapping
     plt.figure(figsize=(10, 6))
 # FIGURE 1: 2D Track Mapping
-    for i, beacon in enumerate(beacons):
-        # We add +3 to x and y so the text doesn't overlap the red dot
-        name = beacon_names[i] if i < len(beacon_names) else f"B{i+1}"
-        plt.text(beacon[0] + 3, beacon[1] + 3, name, color='darkred', fontsize=10, fontweight='bold')
     plt.figure(figsize=(10, 6))
     plt.plot(inner[0], inner[1], 'k', alpha=0.8, linewidth=1.5)
     plt.plot(outer[0], outer[1], 'k', alpha=0.8, linewidth=1.5)
