@@ -12,7 +12,6 @@ def plot_trajectory(true_states, estimates, beacons, inner=None, outer=None):
     if inner: plt.plot(inner[0], inner[1], 'k-', alpha=0.5, label='Track Bounds')
     if outer: plt.plot(outer[0], outer[1], 'k-', alpha=0.5)
     
-    plt.plot(true_states[:, 0], true_states[:, 1], 'b-', label='True Path')
     plt.plot(estimates[:, 0], estimates[:, 1], 'r--', label='EKF Estimate')
     plt.scatter(beacons[:, 0], beacons[:, 1], c='red', marker='x', label='Beacons')
     
