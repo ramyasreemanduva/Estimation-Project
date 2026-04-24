@@ -15,10 +15,10 @@ def F_2D(dt):
 
 def get_beacons():
     return np.array([
-        [-30, -60],   # b1 (bottom-left)
-        [-30,  60],   # b2 (top-left)
-        [140, -10]    # b3 (right side)
-    ])
+    [0, -50], # b1
+   [0, 50],  # b2
+   [140, -40] # b3
+ ])
 
 
 # Lane Constraint
