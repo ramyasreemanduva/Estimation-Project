@@ -13,12 +13,10 @@ def get_track_geometry(dt=0.01):
     v_target = 10.0 
     ds = v_target * dt
 
-   def generate_continuous_path(R_val, rho_val):
-        # CRITICAL FIX: The signs are swapped here. 
-        # Large circle A has a smaller arc angle. Small circle B has a larger arc angle.
-        len_arc_A = (np.pi - 2*alpha) * R_val  
-        len_arc_B = (np.pi + 2*alpha) * rho_val 
-        
+    def generate_continuous_path(R_val, rho_val):
+        # The correct arc sizes: Large circle A is smaller than a half circle, B is larger
+        len_arc_A = (np.pi - 2*alpha) * R_val
+        len_arc_B = (np.pi + 2*alpha) * rho_val
         len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
         total_len = len_arc_A + len_arc_B + (2 * len_str)
         
@@ -50,7 +48,7 @@ def get_track_geometry(dt=0.01):
             path.append([x, y, vx, vy])
             dist += ds
         return np.array(path)
-    # Re-added the missing boundary logic
+
     def get_synced_bounds(Rv, rhov):
         al_bound = np.arcsin((Rv - rhov) / d)
         tl = np.linspace(0.5*np.pi + al_bound, 1.5*np.pi - al_bound, 100)
@@ -62,7 +60,6 @@ def get_track_geometry(dt=0.01):
         return np.concatenate([x_l, [x_r[0]], x_r, [x_l[0]]]), \
                np.concatenate([y_l, [y_r[0]], y_r, [y_l[0]]])
 
-    # Now it correctly returns exactly 3 items for main.py to unpack
     return generate_continuous_path(R_mid, rho_mid), get_synced_bounds(r_in, 18), get_synced_bounds(R_out, 22)
 
 def measure_beacons(states, beacons):
