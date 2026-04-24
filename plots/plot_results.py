@@ -2,52 +2,48 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_analysis(true_states, estimates, dt=0.01):
-    # Ensure estimates is a NumPy array to allow slicing [:, index]
+    # 1. Convert to numpy array for slicing
     estimates = np.array(estimates)
     time = np.arange(len(estimates)) * dt
 
-    # --- LONGITUDINAL ANALYSIS (Velocity) ---
-    # Total Speed = sqrt(vx^2 + vy^2)
+    # 2. Longitudinal Calculation
     true_speed = np.sqrt(true_states[:,2]**2 + true_states[:,3]**2)
     est_speed = np.sqrt(estimates[:,2]**2 + estimates[:,3]**2)
+    long_rmse = np.sqrt(np.mean((true_speed - est_speed)**2))
 
-    # --- LATERAL ANALYSIS (Cross-Track Error) ---
-    # Calculation: Distance from estimate to the nearest point on the centerline
-    lat_error = []
+    # 3. Lateral Calculation (yt)
+    lat_errors = []
     for i in range(len(estimates)):
-        # Calculate Euclidean distance to all points on the true path
-        dx = true_states[:,0] - estimates[i,0]
-        dy = true_states[:,1] - estimates[i,1]
-        dist = np.sqrt(dx**2 + dy**2)
-        lat_error.append(np.min(dist))
+        dist_to_path = np.sqrt((true_states[:,0] - estimates[i,0])**2 + 
+                               (true_states[:,1] - estimates[i,1])**2)
+        lat_errors.append(np.min(dist_to_path))
     
-    lat_error = np.array(lat_error)
+    lat_errors = np.array(lat_errors)
+    lat_rmse = np.sqrt(np.mean(lat_errors**2))
 
-    # --- PLOTTING ---
+    # 4. Plotting
     plt.figure(figsize=(10, 8))
-
-    # Top Plot: Longitudinal (Speed)
+    
     plt.subplot(2, 1, 1)
     plt.plot(time, est_speed, 'r', label='Estimated Speed')
     plt.plot(time, true_speed, 'b', alpha=0.3, label='True Speed')
-    plt.axhline(y=10, color='g', linestyle='--', label='Target (10m/s)')
     plt.ylabel("Velocity (m/s)")
-    plt.title("Longitudinal Analysis: Speed Tracking")
     plt.legend()
-    plt.grid(True)
+    plt.title(f"Longitudinal Analysis (RMSE: {long_rmse:.4f})")
 
-    # Bottom Plot: Lateral (Lane Deviation)
     plt.subplot(2, 1, 2)
-    plt.plot(time, lat_error, 'k', label='Lateral Deviation ($y_t$)')
-    plt.axhline(y=2.0, color='r', linestyle='--', label='Lane Bound (2m)')
+    plt.plot(time, lat_errors, 'k', label='Lateral Deviation ($y_t$)')
+    plt.axhline(y=2.0, color='r', linestyle='--', label='Bound (2m)')
     plt.ylabel("Lateral Error (m)")
     plt.xlabel("Time (s)")
-    plt.title("Lateral Analysis: Cross-Track Deviation")
     plt.legend()
-    plt.grid(True)
+    plt.title(f"Lateral Analysis (RMSE: {lat_rmse:.4f})")
 
     plt.tight_layout()
     plt.show()
+
+    # --- THIS IS THE CRITICAL FIX ---
+    return long_rmse, lat_rmse
 def plot_trajectory(true_states, estimates, beacons, inner=None, outer=None):
     plt.figure(figsize=(12, 6))
     
