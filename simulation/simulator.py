@@ -4,51 +4,27 @@ import numpy as np
 
 def simulate_2D(steps, dt):
 
-    R = 50
-    d = 100
-    v = 10
+    R = 48        # center radius
+    v = 10        # velocity
+    omega = v / R
 
+    theta = 0
     data = []
 
-    theta = np.pi/2
-    x, y = -d/2, 0
+    for _ in range(steps):
 
-    for k in range(steps):
+        # Smooth circular motion
+        x = R * np.cos(theta)
+        y = R * np.sin(theta)
 
-        seg = k % 4
-
-        if seg == 0:
-            x = -d/2 + R * np.cos(theta)
-            y = R * np.sin(theta)
-
-            vx = -v * np.sin(theta)
-            vy = v * np.cos(theta)
-
-            theta -= v / R * dt
-
-        elif seg == 1:
-            x += v * dt
-            vx = v
-            vy = 0
-
-        elif seg == 2:
-            x = d/2 + R * np.cos(theta)
-            y = R * np.sin(theta)
-
-            vx = -v * np.sin(theta)
-            vy = v * np.cos(theta)
-
-            theta -= v / R * dt
-
-        else:
-            x -= v * dt
-            vx = -v
-            vy = 0
+        vx = -v * np.sin(theta)
+        vy = v * np.cos(theta)
 
         data.append([x, y, vx, vy])
 
-    return np.array(data)
+        theta += omega * dt
 
+    return np.array(data)
 
 # MEASUREMENTS 
 
