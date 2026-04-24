@@ -1,49 +1,55 @@
-import numpy as np
-from models.dynamics import apply_track_constraint
-
-# Vehicle Simulation 
-
 def simulate_2D(steps, dt):
 
-    R_center = 48
-    omega = 10 / R_center  # v = r*omega
+    R = 50
+    d = 100
+    v = 10
 
-    theta = 0
     data = []
 
-    for _ in range(steps):
+    # Total segments
+    segments = [
+        "left_curve",
+        "top_straight",
+        "right_curve",
+        "bottom_straight"
+    ]
 
-        # lateral motion (small)
-        lateral = np.clip(np.random.randn() * 0.3, -2, 2)
+    theta = np.pi/2
 
-        r_actual = R_center + lateral
+    x, y = -d/2, 0
 
-        x = r_actual * np.cos(theta)
-        y = r_actual * np.sin(theta)
+    for k in range(steps):
 
-        # apply constraint
-        x, y = apply_track_constraint(x, y)
+        seg = k % 4
 
-        vx = -r_actual * omega * np.sin(theta)
-        vy = r_actual * omega * np.cos(theta)
+        if seg == 0:  # left curve
+            x = -d/2 + R * np.cos(theta)
+            y = R * np.sin(theta)
+
+            vx = -v * np.sin(theta)
+            vy = v * np.cos(theta)
+
+            theta -= v / R * dt
+
+        elif seg == 1:  # top straight
+            x += v * dt
+            vx = v
+            vy = 0
+
+        elif seg == 2:  # right curve
+            x = d/2 + R * np.cos(theta)
+            y = R * np.sin(theta)
+
+            vx = -v * np.sin(theta)
+            vy = v * np.cos(theta)
+
+            theta -= v / R * dt
+
+        else:  # bottom straight
+            x -= v * dt
+            vx = -v
+            vy = 0
 
         data.append([x, y, vx, vy])
 
-        theta += omega * dt
-
     return np.array(data)
-
-# Beacon Measurements
-
-def measure_beacons(states, beacons):
-
-    measurements = []
-
-    for state in states:
-        z = []
-        for bx, by in beacons:
-            dist = np.sqrt((state[0] - bx)**2 + (state[1] - by)**2)
-            z.append(dist + np.random.randn() * 1.5)
-        measurements.append(z)
-
-    return np.array(measurements)
