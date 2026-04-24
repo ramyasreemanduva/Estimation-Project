@@ -9,54 +9,73 @@ def simulate_2D(steps, dt):
     d = 100.0
     v = 10.0
 
+    A = np.array([0.0, 0.0])
+    B = np.array([d, 0.0])
+
+    # ---------- CORRECT TANGENT ANGLE ----------
+    alpha = np.arcsin((R - rho) / d)
+
+    # ---------- TANGENT POINTS ----------
+    TL = A + R * np.array([ np.sin(alpha),  np.cos(alpha)])
+    TR = B + rho * np.array([ np.sin(alpha),  np.cos(alpha)])
+
+    BL = A + R * np.array([-np.sin(alpha), -np.cos(alpha)])
+    BR = B + rho * np.array([-np.sin(alpha), -np.cos(alpha)])
+
+    # ---------- SEGMENT LENGTHS ----------
+    L1 = np.pi * R
+    L2 = np.linalg.norm(TR - TL)
+    L3 = np.pi * rho
+    L4 = np.linalg.norm(BL - BR)
+
+    total = L1 + L2 + L3 + L4
+    s_vals = np.linspace(0, total, steps)
+
     data = []
 
-    # Angle that creates the slanted connection
-    alpha = np.arctan2(30, d)   # 30 ≈ R - rho
+    for s in s_vals:
 
-    theta_vals = np.linspace(0, 2*np.pi, steps)
+        # -------- LEFT ARC --------
+        if s < L1:
+            theta0 = np.arctan2(TL[1], TL[0])
+            theta = theta0 - s / R
 
-    for theta in theta_vals:
+            x = R * np.cos(theta)
+            y = R * np.sin(theta)
 
-        if theta < np.pi:
-            # LEFT BIG ARC
-            t = theta
-            x = R * np.cos(t)
-            y = R * np.sin(t)
+            vx = -v * np.sin(theta)
+            vy =  v * np.cos(theta)
 
-            vx = -v * np.sin(t)
-            vy =  v * np.cos(t)
+        # -------- TOP SLOPED STRAIGHT --------
+        elif s < L1 + L2:
+            t = (s - L1) / L2
+            pos = TL + t * (TR - TL)
 
-        elif theta < np.pi + alpha:
-            # TOP SLOPED STRAIGHT
-            t = (theta - np.pi) / alpha
+            x, y = pos
+            direction = (TR - TL) / L2
 
-            x = R + t * d
-            y = t * (R - rho)
+            vx, vy = v * direction
 
-            vx = v * np.cos(alpha)
-            vy = v * np.sin(alpha)
+        # -------- RIGHT ARC --------
+        elif s < L1 + L2 + L3:
+            theta0 = np.arctan2(TR[1], TR[0] - d)
+            theta = theta0 - (s - (L1 + L2)) / rho
 
-        elif theta < 2*np.pi - alpha:
-            # RIGHT SMALL ARC
-            t = (theta - (np.pi + alpha)) / (np.pi - 2*alpha)
-            ang = np.pi/2 - t*np.pi
+            x = d + rho * np.cos(theta)
+            y = rho * np.sin(theta)
 
-            x = d + rho * np.cos(ang)
-            y = rho * np.sin(ang)
+            vx = -v * np.sin(theta)
+            vy =  v * np.cos(theta)
 
-            vx = -v * np.sin(ang)
-            vy =  v * np.cos(ang)
-
+        # -------- BOTTOM SLOPED STRAIGHT --------
         else:
-            # BOTTOM SLOPED STRAIGHT
-            t = (theta - (2*np.pi - alpha)) / alpha
+            t = (s - (L1 + L2 + L3)) / L4
+            pos = BR + t * (BL - BR)
 
-            x = d - t * d
-            y = -t * (R - rho)
+            x, y = pos
+            direction = (BL - BR) / L4
 
-            vx = -v * np.cos(alpha)
-            vy = -v * np.sin(alpha)
+            vx, vy = v * direction
 
         data.append([x, y, vx, vy])
 
