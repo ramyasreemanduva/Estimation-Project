@@ -8,7 +8,7 @@ def plot_trajectory(true_states, estimates, beacons, inner=None, outer=None):
     if outer: plt.plot(outer[0], outer[1], 'k-', alpha=0.8, linewidth=2)
     
     # Plot Paths
-    plt.plot(true_states[:, 0], true_states[:, 1], label='True Path', linewidth=2)
+    
     plt.plot(estimates[:, 0], estimates[:, 1], '--', label='Estimated Path', linewidth=1.5)
     
     # Plot Beacons
