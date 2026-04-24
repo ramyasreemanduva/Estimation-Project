@@ -1,20 +1,20 @@
 import numpy as np
 
 def get_track_geometry(dt=0.01):
-    # Parameters from problem statement
+    # Parameters per project description: R=50, r=46, rho=20, d=100 [cite: 13, 14]
     R_out, r_in, rho_mid, d = 50, 46, 20, 100
     R_mid = (R_out + r_in) / 2 # Centerline 48m
     
-    # Calculate Tangent Angle alpha
+    # Calculate Tangent Angle (alpha) - Crucial for smooth connections
     alpha = np.arcsin((R_mid - rho_mid) / d)
     
-    A = np.array([R_out, 0])
-    B = np.array([R_out + d, 0])
-    v_target = 10.0 # m/s
+    A = np.array([R_out, 0])  # Center of large arc
+    B = np.array([R_out + d, 0]) # Center of small arc
+    v_target = 10.0 # Approximately 10m/s 
     ds = v_target * dt
 
     def generate_full_path(R_val, rho_val):
-        # Centerline distance calculation
+        # Calculate precise segment lengths
         len_arc_A = (np.pi + 2*alpha) * R_val
         len_arc_B = (np.pi - 2*alpha) * rho_val
         len_str = np.sqrt(d**2 - (R_val - rho_val)**2)
@@ -23,23 +23,23 @@ def get_track_geometry(dt=0.01):
         path = []
         dist = 0
         while dist < total_len:
-            if dist < len_arc_A: # Left Arc
+            if dist < len_arc_A: # Segment 1: Left Arc (A)
                 theta = (np.pi/2 + alpha) + (dist / R_val)
                 x, y = A[0] + R_val * np.cos(theta), A[1] + R_val * np.sin(theta)
                 vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            elif dist < (len_arc_A + len_str): # Bottom Straight
+            elif dist < (len_arc_A + len_str): # Segment 2: Bottom Straight
                 s = (dist - len_arc_A) / len_str
                 p1 = A + R_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
                 p2 = B + rho_val * np.array([np.cos(1.5*np.pi - alpha), np.sin(1.5*np.pi - alpha)])
                 pos = p1 + s * (p2 - p1)
                 vx, vy = v_target * np.cos(-alpha), v_target * np.sin(-alpha)
                 x, y = pos[0], pos[1]
-            elif dist < (len_arc_A + len_str + len_arc_B): # Right Arc
+            elif dist < (len_arc_A + len_str + len_arc_B): # Segment 3: Right Arc (B)
                 s_arc = dist - (len_arc_A + len_str)
                 theta = (1.5*np.pi - alpha) + (s_arc / rho_val)
                 x, y = B[0] + rho_val * np.cos(theta), B[1] + rho_val * np.sin(theta)
                 vx, vy = -v_target * np.sin(theta), v_target * np.cos(theta)
-            else: # Top Straight
+            else: # Segment 4: Top Straight
                 s = (dist - (len_arc_A + len_str + len_arc_B)) / len_str
                 p1 = B + rho_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
                 p2 = A + R_val * np.array([np.cos(0.5*np.pi + alpha), np.sin(0.5*np.pi + alpha)])
@@ -50,7 +50,7 @@ def get_track_geometry(dt=0.01):
             dist += ds
         return np.array(path)
 
-    # Static boundaries for plotting
+    # Static boundaries for plotting Figure 1 [cite: 18]
     def get_bounds(R_v, rho_v):
         t_l = np.linspace(0.5*np.pi + alpha, 1.5*np.pi - alpha, 100)
         t_r = np.linspace(1.5*np.pi - alpha, 2.5*np.pi + alpha, 100)
@@ -58,6 +58,7 @@ def get_track_geometry(dt=0.01):
                np.concatenate([A[1]+R_v*np.sin(t_l), B[1]+rho_v*np.sin(t_r)])
 
     return generate_full_path(R_mid, rho_mid), get_bounds(r_in, 18), get_bounds(R_out, 22)
+
 def measure_beacons(states, beacons):
-    # Standard deviation 1.5m [cite: 19]
+    # Standard deviation 1.5m as per datasheet [cite: 19]
     return np.array([[np.sqrt((s[0]-b[0])**2 + (s[1]-b[1])**2) + np.random.normal(0, 1.5) for b in beacons] for s in states])
