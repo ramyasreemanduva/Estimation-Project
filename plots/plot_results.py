@@ -8,7 +8,7 @@ def plot_trajectory(true, est):
 
     plt.xlabel("X position")
     plt.ylabel("Y position")
-    plt.title("EKF tracking with beacons")
+    plt.title("EKF tracking with beacons on constrained path")
 
     plt.legend()
     plt.grid()
