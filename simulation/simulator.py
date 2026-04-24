@@ -9,78 +9,58 @@ def simulate_2D(steps, dt):
     d = 100.0
     v = 10.0
 
-    A = np.array([0.0, 0.0])
-    B = np.array([d, 0.0])
-
-    # -------- Correct tangent angle --------
-    alpha = np.arcsin((R - rho) / d)
-
-    # -------- Tangent points --------
-    TL = A + R * np.array([ np.sin(alpha),  np.cos(alpha)])
-    TR = B + rho * np.array([ np.sin(alpha),  np.cos(alpha)])
-
-    BL = A + R * np.array([-np.sin(alpha), -np.cos(alpha)])
-    BR = B + rho * np.array([-np.sin(alpha), -np.cos(alpha)])
-
-    # -------- Segment lengths --------
-    L1 = np.pi * R
-    L2 = np.linalg.norm(TR - TL)
-    L3 = np.pi * rho
-    L4 = np.linalg.norm(BR - BL)
-
-    total = L1 + L2 + L3 + L4
-    s_vals = np.linspace(0, total, steps)
-
     data = []
 
-    for s in s_vals:
+    # Angle that creates the slanted connection
+    alpha = np.arctan2(30, d)   # 30 ≈ R - rho
 
-        # ---------- LEFT ARC ----------
-        if s < L1:
-            theta0 = np.arctan2(TL[1], TL[0])
-            theta = theta0 - s / R
+    theta_vals = np.linspace(0, 2*np.pi, steps)
 
-            x = R * np.cos(theta)
-            y = R * np.sin(theta)
+    for theta in theta_vals:
 
-            vx = -v * np.sin(theta)
-            vy =  v * np.cos(theta)
+        if theta < np.pi:
+            # LEFT BIG ARC
+            t = theta
+            x = R * np.cos(t)
+            y = R * np.sin(t)
 
-        # ---------- TOP SLOPED STRAIGHT ----------
-        elif s < L1 + L2:
-            s2 = (s - L1) / L2
-            pos = TL + s2 * (TR - TL)
+            vx = -v * np.sin(t)
+            vy =  v * np.cos(t)
 
-            x, y = pos
-            direction = (TR - TL) / L2
+        elif theta < np.pi + alpha:
+            # TOP SLOPED STRAIGHT
+            t = (theta - np.pi) / alpha
 
-            vx, vy = v * direction
+            x = R + t * d
+            y = t * (R - rho)
 
-        # ---------- RIGHT ARC ----------
-        elif s < L1 + L2 + L3:
-            theta0 = np.arctan2(TR[1], TR[0] - d)
-            theta = theta0 - (s - (L1 + L2)) / rho
+            vx = v * np.cos(alpha)
+            vy = v * np.sin(alpha)
 
-            x = d + rho * np.cos(theta)
-            y = rho * np.sin(theta)
+        elif theta < 2*np.pi - alpha:
+            # RIGHT SMALL ARC
+            t = (theta - (np.pi + alpha)) / (np.pi - 2*alpha)
+            ang = np.pi/2 - t*np.pi
 
-            vx = -v * np.sin(theta)
-            vy =  v * np.cos(theta)
+            x = d + rho * np.cos(ang)
+            y = rho * np.sin(ang)
 
-        # ---------- BOTTOM SLOPED STRAIGHT ----------
+            vx = -v * np.sin(ang)
+            vy =  v * np.cos(ang)
+
         else:
-            s4 = (s - (L1 + L2 + L3)) / L4
-            pos = BR + s4 * (BL - BR)
+            # BOTTOM SLOPED STRAIGHT
+            t = (theta - (2*np.pi - alpha)) / alpha
 
-            x, y = pos
-            direction = (BL - BR) / L4
+            x = d - t * d
+            y = -t * (R - rho)
 
-            vx, vy = v * direction
+            vx = -v * np.cos(alpha)
+            vy = -v * np.sin(alpha)
 
         data.append([x, y, vx, vy])
 
     return np.array(data)
-
 
 # MEASUREMENTS 
 
