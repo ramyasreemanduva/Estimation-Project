@@ -1,10 +1,6 @@
 import numpy as np
 
 # TRUE TRACK
-
-dimport numpy as np
-
-# TRUE TRACK
 def simulate_2D(steps, dt):
     # Constants based on diagram
     R = 50      # Large radius
@@ -66,17 +62,3 @@ def measure_beacons(states, beacons):
 
     return np.array(measurements)
 
-# MEASUREMENTS
-
-def measure_beacons(states, beacons):
-
-    measurements = []
-
-    for state in states:
-        z = []
-        for bx, by in beacons:
-            dist = np.sqrt((state[0] - bx)**2 + (state[1] - by)**2)
-            z.append(dist + np.random.randn() * 1.5)
-        measurements.append(z)
-
-    return np.array(measurements)
