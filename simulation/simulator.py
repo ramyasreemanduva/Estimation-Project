@@ -2,57 +2,47 @@ import numpy as np
 
 # TRUE TRACK
 
+import numpy as np
+
 def simulate_2D(steps, dt):
 
-   
-    path_points = np.array([
-        [-15, -45],   # bottom-left
-        [10, 45],     # top-left
-        [120, 30],    # top-right
-        [120, 0],     # right arc start
-        [120, -20],   # right arc bottom
-        [90, -20],    # lower right straight
-        [-15, -45]    # close loop
-    ])
+    R = 50.0
+    rho = 20.0
+    d = 100.0
+    v = 10.0
 
-    # ---- Interpolate smooth path ----
+    # ---------- Build centerline track ----------
     pts = []
-    for i in range(len(path_points) - 1):
-        p1 = path_points[i]
-        p2 = path_points[i + 1]
 
-        for t in np.linspace(0, 1, steps // (len(path_points)-1)):
-            pt = p1 + t * (p2 - p1)
-            pts.append(pt)
+    # 1. LEFT ARC (big circle)
+    theta1 = np.linspace(np.pi/2, -np.pi/2, steps//4)
+    x1 = R * np.cos(theta1)
+    y1 = R * np.sin(theta1)
 
-    pts = np.array(pts)
+    # 2. BOTTOM STRAIGHT (slanted)
+    x2 = np.linspace(x1[-1], d, steps//4)
+    y2 = np.linspace(y1[-1], -20, steps//4)
 
-    # ---- Add curved arcs manually ----
-    theta = np.linspace(np.pi/2, -np.pi/2, 200)
+    # 3. RIGHT ARC (small circle)
+    theta3 = np.linspace(-np.pi/2, np.pi/2, steps//4)
+    x3 = d + rho * np.cos(theta3)
+    y3 = rho * np.sin(theta3)
 
-    # Left big arc
-    left_arc = np.column_stack([
-        50 * np.cos(theta),
-        50 * np.sin(theta)
-    ])
+    # 4. TOP STRAIGHT (slanted)
+    x4 = np.linspace(x3[-1], x1[0], steps//4)
+    y4 = np.linspace(y3[-1], y1[0], steps//4)
 
-    # Right small arc
-    right_arc = np.column_stack([
-        100 + 20 * np.cos(theta),
-        20 * np.sin(theta)
-    ])
+    # Combine path
+    x = np.concatenate([x1, x2, x3, x4])
+    y = np.concatenate([y1, y2, y3, y4])
 
-    # ---- Combine everything ----
-    full_path = np.vstack([
-        left_arc,
-        pts,
-        right_arc
-    ])
+    # ---------- Compute velocity ----------
+    vx = np.gradient(x, dt)
+    vy = np.gradient(y, dt)
 
-    # ---- Compute velocity ----
-    velocities = np.gradient(full_path, axis=0) / dt
+    states = np.column_stack([x, y, vx, vy])
 
-    return np.hstack([full_path, velocities])
+    return states
 
 
 # MEASUREMENTS
