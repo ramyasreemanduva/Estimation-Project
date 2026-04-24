@@ -22,9 +22,9 @@ def plot_trajectory(true_states, estimates, beacons, inner=None, outer=None):
     plt.figure(figsize=(10, 4))
     plt.plot(time, lateral_deviation, 'k-', linewidth=1.5, label='Lateral Deviation')
     
-    # According to coursework, width is 4m, so bounds are +/- 2m from center
-    plt.axhline(y=2, color='r', linestyle='--', label='Outer Wall (+2m)') [cite: 14]
-    plt.axhline(y=-2, color='r', linestyle='--', label='Inner Wall (-2m)') [cite: 14]
+    #so bounds are +/- 2m from center
+    plt.axhline(y=2, color='r', linestyle='--', label='Outer Wall (+2m)') 
+    plt.axhline(y=-2, color='r', linestyle='--', label='Inner Wall (-2m)')
     
     plt.title("Lateral Position Over Time (Constraint Validation)")
     plt.xlabel("Time (s)")
