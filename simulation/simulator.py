@@ -1,3 +1,7 @@
+import numpy as np
+
+# SIMULATION
+
 def simulate_2D(steps, dt):
 
     R = 50
@@ -6,23 +10,14 @@ def simulate_2D(steps, dt):
 
     data = []
 
-    # Total segments
-    segments = [
-        "left_curve",
-        "top_straight",
-        "right_curve",
-        "bottom_straight"
-    ]
-
     theta = np.pi/2
-
     x, y = -d/2, 0
 
     for k in range(steps):
 
         seg = k % 4
 
-        if seg == 0:  # left curve
+        if seg == 0:
             x = -d/2 + R * np.cos(theta)
             y = R * np.sin(theta)
 
@@ -31,12 +26,12 @@ def simulate_2D(steps, dt):
 
             theta -= v / R * dt
 
-        elif seg == 1:  # top straight
+        elif seg == 1:
             x += v * dt
             vx = v
             vy = 0
 
-        elif seg == 2:  # right curve
+        elif seg == 2:
             x = d/2 + R * np.cos(theta)
             y = R * np.sin(theta)
 
@@ -45,7 +40,7 @@ def simulate_2D(steps, dt):
 
             theta -= v / R * dt
 
-        else:  # bottom straight
+        else:
             x -= v * dt
             vx = -v
             vy = 0
@@ -53,3 +48,19 @@ def simulate_2D(steps, dt):
         data.append([x, y, vx, vy])
 
     return np.array(data)
+
+
+# MEASUREMENTS 
+
+def measure_beacons(states, beacons):
+
+    measurements = []
+
+    for state in states:
+        z = []
+        for bx, by in beacons:
+            dist = np.sqrt((state[0] - bx)**2 + (state[1] - by)**2)
+            z.append(dist + np.random.randn() * 1.5)
+        measurements.append(z)
+
+    return np.array(measurements)
