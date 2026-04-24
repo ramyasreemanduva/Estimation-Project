@@ -4,7 +4,7 @@ import numpy as np
 
 def simulate_2D(steps, dt):
 
-    # ---- Key shape points from your diagram ----
+   
     path_points = np.array([
         [-15, -45],   # bottom-left
         [10, 45],     # top-left
