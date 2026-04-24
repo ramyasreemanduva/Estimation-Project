@@ -3,6 +3,7 @@ from models.dynamics import get_beacons
 from filters.kalman_filter import ekf_predict, ekf_update_multi
 from simulation.simulator import get_track_geometry, measure_beacons
 from plots.plot_results import plot_trajectory
+from plots.plot_results import perform_analysis
 
 # CONFIG
 dt, steps = 0.01, 1500
@@ -32,8 +33,8 @@ for k in range(len(true_states)):
     x_est, P = ekf_predict(x_est, P, Q, dt)
     x_est, P = ekf_update_multi(x_est, P, measurements[k], beacons, R)
     estimates.append(x_est.copy())
-    from plots.analysis import perform_analysis
-    long_rmse, lat_rmse = perform_analysis(true_states, estimates, dt)
+ 
+long_rmse, lat_rmse = perform_analysis(true_states, estimates, dt)
 
 print(f"Project Validation:")
 print(f"Longitudinal RMSE: {long_rmse:.4f} m/s")
