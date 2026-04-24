@@ -4,20 +4,16 @@ from filters.kalman_filter import ekf_predict, ekf_update_multi
 from models.dynamics import get_beacons
 from plots.plot_results import plot_trajectory
 
-dt = 0.01 # [cite: 20]
+dt = 0.01 
 true_states, inner, outer = get_track_geometry(dt)
-
 beacons = get_beacons()
 measurements = measure_beacons(true_states, beacons)
 
-# Initial State: Start at first true position
 x_est = true_states[0].copy()
 P = np.eye(4) * 0.1 
-
-# TUNING: These values are critical for Figure 3 performance [cite: 91]
-# Make Q very small so the filter ignores measurement jitter
+# Lower Q values make the estimate smoother and stay in lane [cite: 17]
 Q = np.diag([1e-6, 1e-6, 1e-4, 1e-4]) 
-R = np.eye(len(beacons)) * (1.5**2) # [cite: 19]
+R = np.eye(len(beacons)) * (1.5**2) 
 
 estimates = []
 for k in range(len(measurements)):
