@@ -21,7 +21,7 @@ def H_jacobian(x, beacon):
  # Avoid division by zero
     if r < 1e-6:
         r = 1e-6 
-        return np.array([[dx/r, dy/r, 0, 0]])
+    return np.array([[dx/r, dy/r, 0, 0]])
 # BEACON POSITIONS
 def get_beacons():
     return np.array([
