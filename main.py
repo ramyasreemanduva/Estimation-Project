@@ -14,12 +14,6 @@ measurements = measure_beacons(true_states, beacons)
 # --- 2. EKF Initialization ---
 # CRITICAL: Start exactly at the true starting point to prevent the initial lateral spike
 x_est = true_states[0].copy()
-
-# Add realistic uncertainty
-x_est[0] += np.random.normal(0, 2)
-x_est[1] += np.random.normal(0, 2)
-x_est[2] += np.random.normal(0, 1)
-x_est[3] += np.random.normal(0, 0.5)
 P = np.eye(4) * 0.01 
 
 # Tuning Parameters: 
