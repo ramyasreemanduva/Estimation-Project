@@ -20,8 +20,8 @@ def H_jacobian(x, beacon):
     r = np.sqrt(dx**2 + dy**2)
  # Avoid division by zero
     if r < 1e-6:
-        r = 1e-6
- return np.array([[dx/r, dy/r, 0, 0]])
+        r = 1e-6 
+        return np.array([[dx/r, dy/r, 0, 0]])
 # BEACON POSITIONS
 def get_beacons():
     return np.array([
