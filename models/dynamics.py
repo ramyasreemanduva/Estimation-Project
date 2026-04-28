@@ -12,7 +12,7 @@ def get_beacons():
     return np.array([
         [0, -50],  # b1: Bottom Left
         [0, 50],   # b2: Top Left
-        [180, 0]   # b3: Far Right (Centered with the small turn)
+        [180, 0]   # b3: Far Right 
     ])
 
 def H_jacobian(x, beacon):
